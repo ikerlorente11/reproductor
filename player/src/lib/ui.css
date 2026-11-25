@@ -519,6 +519,150 @@ a.rp-strip:hover { filter: brightness(.97); }
 .rp-page-head select.rp-input { padding: 7px 10px; border-radius: 999px; font-size: 13px; }
 .rp-back.on { color: var(--rp-accent-2) !important; background: var(--rp-surface-2); }
 
+/* «Añadir a lista» as Spotify's: every list with a tick, «Hecho» always in view at the bottom */
+.rp-menu.rp-menu-lists { width: min(290px, calc(100vw - 32px)); max-height: 440px; }
+.rp-menu-lists .rp-menu-actions { position: sticky; bottom: -6px; background: inherit; padding-bottom: 6px; }
+.rp-menu-filter { width: calc(100% - 8px); margin: 2px 4px 4px; font-size: 13px; }
+.rp-menu-pick { cursor: pointer; width: 100%; text-align: left; }
+.rp-menu-pick input { accent-color: var(--rp-accent); width: 16px; height: 16px; flex: none; margin: 0; cursor: pointer; }
+.rp-menu-pick-text { display: grid; min-width: 0; flex: 1; }
+.rp-menu.rp-menu-up { top: auto; bottom: calc(100% + 6px); }
+.rp-menu-lists.rp-menu-up .rp-menu-actions { bottom: -6px; }
+
+/* ---- the hero's status pill, as tall as the buttons beside it ---- */
+.rp-badge.rp-badge-big { padding: 8px 14px; font-size: 13px; font-weight: 600; line-height: normal; border: 1px solid transparent; }
+
+/* ---- placeholders while loading ---- */
+.rp-skel { display: block; border-radius: 8px; background: var(--rp-surface-3); animation: rp-pulse 1.4s ease-in-out infinite; box-shadow: none; }
+.rp-skel-line { height: 12px; width: 80%; }
+.rp-skel-title { height: clamp(28px, 4vw, 46px); width: min(340px, 70%); border-radius: 10px; }
+.rp-skel-btn { width: 110px; height: 36px; border-radius: 999px; }
+.rp-skel-badge { width: 78px; height: 18px; border-radius: 999px; }
+.rp-artist-skel { display: grid; gap: 22px; }
+.rp-artist-skel .rp-card { gap: 10px; }
+@keyframes rp-pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .rp-skel { animation: none; } }
+
+/* ---- deleting ---- */
+.rp-btn.rp-danger-solid { background: #c4314b; border-color: transparent; color: #fff; }
+.rp-btn.rp-danger-solid:hover:not(:disabled) { background: #b02a42; }
+.rp-mini.rp-mini-danger:hover { background: #c4314b; color: #fff; }
+
+/* ---- soundlift: progress and songs to decide on ---- */
+.rp-count.rp-count-alert { display: inline-flex; align-items: center; gap: 3px; background: rgba(214,69,69,.14); color: #c62f42; }
+.rp-count-alert .rp-i { width: 12px; height: 12px; }
+.rp-sl-intro { margin: -6px 0 0; max-width: 720px; }
+.rp-sl-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.rp-sl-head .rp-h2 { margin: 0; }
+.rp-sl-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; max-width: 900px; }
+.rp-sl-item { padding: 12px 14px; border-radius: 12px; background: var(--rp-surface-2); display: grid; gap: 6px; }
+.rp-sl-item p { margin: 0; }
+.rp-sl-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rp-sl-main { display: grid; min-width: 0; flex: 1; }
+.rp-sl-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.rp-sl-bad { color: #c62f42; }
+.rp-sl-cands { list-style: none; margin: 4px 0 0; padding: 8px 0 0; border-top: 1px solid var(--rp-line); display: grid; gap: 4px; }
+.rp-sl-cands li { display: flex; align-items: center; gap: 10px; padding: 4px 2px; min-width: 0; }
+.rp-sl-weak .rp-sl-main { opacity: .65; }
+
+/* ---- choosing several songs or releases ---- */
+.rp-tracks-tools { display: flex; justify-content: flex-end; margin: -4px 0 6px; }
+.rp-tracks.rp-selecting li { cursor: pointer; user-select: none; }
+.rp-tracks.rp-selecting li.off { cursor: default; }
+.rp-tracks li.sel { background: var(--rp-surface-2); }
+.rp-tcheck { display: inline-flex; align-items: center; justify-content: center; }
+.rp-tcheck input, .rp-card-check input { width: 16px; height: 16px; accent-color: var(--rp-accent); cursor: pointer; margin: 0; }
+.rp-card-check { position: absolute; top: 8px; left: 8px; z-index: 2; width: 26px; height: 26px; border-radius: 7px; display: inline-flex;
+  align-items: center; justify-content: center; background: var(--rp-surface); }
+.rp-card-sel { outline: 2px solid var(--rp-accent); outline-offset: -2px; }
+.rp-selbar { position: sticky; bottom: 12px; z-index: 30; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+  padding: 10px 14px; border-radius: 12px; background: var(--rp-surface); border: 1px solid var(--rp-line); box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.rp-selbar-gap { flex: 1; }
+.rp-selbar-count { font-size: 13px; }
+.rp-card-off { opacity: .45; }
+
+/* ---- the sidebar's filter ---- */
+.rp-libfilter { position: sticky; top: -4px; z-index: 2; display: flex; align-items: center; margin: -4px -4px 8px; padding: 6px 8px; background: var(--rp-surface-2); border-radius: 12px 12px 0 0; }
+.rp-libfilter > .rp-i-search { position: absolute; left: 10px; width: 14px; height: 14px; opacity: .55; pointer-events: none; }
+.rp-libfilter-input { width: 100%; min-width: 0; padding: 7px 30px 7px 31px; border-radius: 8px; border: 1px solid var(--rp-line);
+  background: var(--rp-surface-2); color: inherit; font: inherit; font-size: 13px; }
+.rp-libfilter-input:focus { outline: 2px solid var(--rp-accent); outline-offset: 0; }
+.rp-libfilter-input::-webkit-search-cancel-button { display: none; }
+.rp-libfilter-clear { position: absolute; right: 4px; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: inherit;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; opacity: .6; }
+.rp-libfilter-clear:hover { opacity: 1; background: var(--rp-surface-3); }
+.rp-libfilter-clear .rp-i { width: 12px; height: 12px; }
+.rp-libnone { margin: 4px 8px; }
+
+/* ---- songs to place ---- */
+.rp-sl-find { display: grid; gap: 6px; padding-top: 6px; border-top: 1px solid var(--rp-line); }
+.rp-sl-search { display: flex; gap: 6px; }
+.rp-sl-search .rp-input { flex: 1; min-width: 0; font-size: 13px; }
+.rp-sl-find .rp-sl-cands { border-top: 0; padding-top: 0; }
+.rp-sl-cover { width: 34px; height: 34px; border-radius: 5px; object-fit: cover; flex: none; }
+.rp-sl-cands a.rp-btn { text-decoration: none; }
+@media (max-width: 640px) { .rp-sl-cands li { flex-wrap: wrap; } }
+
+/* ---- search «Todo»: a heading per kind; an artist's «Canciones» ---- */
+.rp-h2.rp-search-sec { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 8px 0 -6px; }
+.rp-h2.rp-search-sec a { font-weight: 500; text-decoration: none; }
+.rp-h2.rp-search-sec a:hover { text-decoration: underline; }
+.rp-songs-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.rp-songs-tools label { display: inline-flex; align-items: center; gap: 6px; }
+.rp-tdate { min-width: 84px; text-align: right; white-space: nowrap; }
+@media (max-width: 640px) { .rp-tdate { display: none; } }
+/* ---- lyrics, over the main area like the queue; the sung line lit and kept in view ---- */
+.rp-lyrics { position: absolute; right: 12px; bottom: calc(100% + 8px); width: min(520px, calc(100vw - 24px)); height: min(62vh, 560px); z-index: 20;
+  display: flex; flex-direction: column; border-radius: 14px; background: var(--rp-surface); border: 1px solid var(--rp-line);
+  box-shadow: 0 18px 50px rgba(0,0,0,.3); padding: 8px; }
+.rp-lyrics-head { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  padding: 4px 4px 10px; margin-bottom: 2px; border-bottom: 1px solid var(--rp-line); }
+.rp-lyrics-cover { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--rp-surface-3); box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+.rp-lyrics-title { display: grid; min-width: 0; gap: 1px; line-height: 1.25; }
+.rp-lyrics-title strong { font-size: 15px; }
+.rp-lyrics-title small { font-size: 12px; }
+.rp-lyrics-kicker { font-size: 10.5px !important; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rp-accent-2); }
+.rp-lyrics-cover.rp-cover-none { font-size: 20px; }
+.rp-lyrics-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 30% 8%; text-align: center;
+  scrollbar-width: none; -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent); }
+.rp-lyrics-body::-webkit-scrollbar { display: none; }
+.rp-lyrics-body > p:first-child { margin-top: 0; }
+.rp-lyrics-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+/* The sung line grows a little and lights up; the others step back. transform keeps the layout still while it animates. */
+.rp-lyrics-lines li { font-size: 20px; font-weight: 700; line-height: 1.35; padding: 4px 10px; border-radius: 10px; cursor: pointer;
+  opacity: .35; transform: scale(1); transform-origin: center; overflow-wrap: anywhere;
+  transition: transform .45s cubic-bezier(.2, .9, .3, 1.25), opacity .35s ease, color .35s ease, filter .35s ease; filter: blur(.3px); }
+.rp-lyrics-lines li:hover { opacity: .75; filter: none; }
+.rp-lyrics-lines li.past { opacity: .5; }
+.rp-lyrics-lines li.on { opacity: 1; color: var(--rp-accent-2); transform: scale(1.14); filter: none; }
+.rp-lyrics-plain { white-space: pre-line; font-size: 17px; font-weight: 600; line-height: 1.7; margin: 0; }
+.rp-lyrics-src { margin: 4px 8px 0; text-align: center; }
+@media (max-width: 640px) { .rp-lyrics-lines li { font-size: 17px; } }
+@media (prefers-reduced-motion: reduce) { .rp-lyrics-lines li { transition: opacity .2s, color .2s; } }
+/* ---- adjusting the lyrics' sync by hand ---- */
+.rp-lyrics-actions { display: inline-flex; align-items: center; gap: 6px; }
+.rp-lyrics-adjusting .rp-lyrics-lines li { cursor: crosshair; }
+.rp-lyrics-adjust { display: grid; gap: 8px; padding: 10px 4px 2px; border-top: 1px solid var(--rp-line); }
+.rp-lyrics-adjust > p { margin: 0; text-align: center; }
+.rp-lyrics-steps { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.rp-lyrics-steps .rp-btn { min-width: 44px; justify-content: center; }
+.rp-lyrics-offset { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; color: var(--rp-accent-2); }
+/* ---- a playlist's songs still on their way ---- */
+.rp-pending-song .rp-tinfo .rp-dl-bar { margin-top: 4px; max-width: 260px; }
+/* A player toggle that is on (shuffle, repeat, lyrics, queue): green with a dot under it, as it stays on. */
+.rp-pbtn.on { position: relative; }
+.rp-pbtn.on::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; }
+/* A song on its way in a list: its badge fills up as it downloads. */
+.rp-badge-progress { position: relative; overflow: hidden; font-variant-numeric: tabular-nums; }
+.rp-badge-progress > i { position: absolute; inset: 0 auto 0 0; background: rgba(31,184,102,.28); transition: width .6s ease; }
+.rp-badge-progress > span { position: relative; }
+.rp-avatar.rp-avatar-song { border-radius: 6px; }
+.rp-plinks .rp-plink { color: inherit; text-decoration: none; }
+.rp-plinks .rp-plink:hover { text-decoration: underline; color: var(--oc-role-on-surface, inherit); }
+/* An artist's «Populares»: five songs, ten with «Ver más». */
+.rp-top .rp-top-more { margin-top: 6px; }
+
 /* ---- the user's devices (as Spotify Connect: connect.ts, DevicePicker.vue) ---- */
 .rp-i-devices { --rp-i: url('/icons/device-line.svg'); }
 .rp-i-computer { --rp-i: url('/icons/computer-line.svg'); }

@@ -217,6 +217,19 @@ export interface PlaylistSong {
   track_id?: number | null
 }
 
+/** A playlist holding something: by itself (`own`, or `file` in an old folder list: out by `item_id`), or a song that
+ *  comes in with a release or an artist of the list (`release`/`artist`: left out by `key`). */
+export interface Containing {
+  playlist_id: number
+  via: 'own' | 'file' | 'release' | 'artist'
+  item_id: number
+  /** the list's entry it is in (the song, or the release or artist it comes with) */
+  title: string
+  key: string | null
+  /** the song's own title */
+  song: string
+}
+
 export interface Playlist extends PlaylistSummary {
   /** songs, releases and artists (the files of an old folder playlist are only in `songs`) */
   entries: PlaylistEntry[]
@@ -413,6 +426,10 @@ export class Api {
   }
 
   playlists() { return this.call<PlaylistSummary[]>('/api/playlists') }
+  /** The playlists that hold this song, release or artist (by itself, or a song coming in with a release or an artist). */
+  playlistsContaining(kind: Exclude<ItemKind, 'file'>, id: number) {
+    return this.call<Containing[]>(`/api/playlists/containing?kind=${kind}&id=${id}`)
+  }
   playlist(id: number) { return this.call<Playlist>(`/api/playlists/${id}`) }
   createPlaylist(name: string) { return this.call<Playlist>('/api/playlists', { method: 'POST', body: JSON.stringify({ name }) }) }
   renamePlaylist(id: number, name: string) { return this.call<Playlist>(`/api/playlists/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }) }
