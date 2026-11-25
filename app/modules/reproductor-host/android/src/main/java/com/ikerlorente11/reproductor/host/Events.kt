@@ -29,8 +29,11 @@ class Events {
     /** the server stops: every stream ends */
     fun closeAll() { for (stream in streams) stream.close() }
 
+    /** A page that does not read for a while (the web view held back with the screen off) misses what does not fit
+     * in its queue, but keeps its stream: closing it left the page without events until it came back to the front.
+     * The dead connections go when a write to them fails (see [ping]). */
     internal fun broadcast(message: ByteArray) {
-        for (stream in streams) if (!stream.offer(message)) stream.close()
+        for (stream in streams) stream.offer(message)
     }
 
     internal fun count() = streams.size

@@ -10,7 +10,8 @@
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
     "web:build": "npm --prefix web run build && node scripts/zip-web.mjs",
-    "eas-build-post-install": "npm --prefix ../player install --no-audit --no-fund && npm --prefix web install --no-audit --no-fund && npm run web:build"
+    "eas-build-post-install": "npm --prefix ../player install --no-audit --no-fund && npm --prefix web install --no-audit --no-fund && npm run web:build",
+    "update": "npm run web:build && eas update --channel production --platform android --environment production"
   },
   "dependencies": {
     "@types/react": "~19.3.0",
@@ -21,6 +22,7 @@
     "expo-splash-screen": "~58.0.13",
     "expo-status-bar": "~58.0.4",
     "expo-system-ui": "~58.0.7",
+    "expo-updates": "~58.0.22",
     "react": "19.3.0",
     "react-native": "0.88.1",
     "react-native-webview": "14.0.1",

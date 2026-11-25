@@ -33,11 +33,12 @@ Expo Go no sirve: la app necesita su módulo nativo. Se usa una **development bu
 1. Compilar desde una ruta corta, porque CMake se ahoga con rutas largas en Windows:
 
    ```
-   robocopy <repo> C:\rep /E /MT:16 /XD .git
+   robocopy <repo> C:\rep /E /MT:16 /XD <repo>\.git <repo>\app\android   # solo app\android: una /XD android a secas
+                                                                         # deja fuera modules/reproductor-host/android
    cd C:\rep\app
    npm --prefix web run build && node scripts/zip-web.mjs
    APP_VARIANT=development npx expo prebuild --platform android --clean --no-install
-   echo reactNativeArchitectures=arm64-v8a >> android/gradle.properties
+   printf '\nreactNativeArchitectures=arm64-v8a\n' >> android/gradle.properties   # el archivo no acaba en salto de línea
    cd android && ./gradlew assembleDebug        # con JAVA_HOME del JDK 17, desde bash
    adb install -r app/build/outputs/apk/debug/app-debug.apk
    ```
@@ -55,8 +56,27 @@ Expo Go no sirve: la app necesita su módulo nativo. Se usa una **development bu
    - Sin esa variable, se usa la página compilada en la APK.
    - Solo el Kotlin necesita `assembleDebug` otra vez.
 
+## Publicar
+
+Las versiones se compilan en local (sin EAS Build) y van a Play (`com.ikerlorente11.reproductor`, prueba interna).
+
+- Firma: `plugins/withLocalSigning.js` firma la release con `credentials.json` + `credentials/reproductor-upload.jks` (la
+  clave de subida, fuera de git; copia en `~/.android-keys/`). Sin ellos, con la clave de debug.
+- Versión nueva para Play: subir `android.versionCode` en `app.json` y, desde `C:eppp`:
+
+  ```
+  npm --prefix web run build && node scripts/zip-web.mjs
+  npx expo prebuild --platform android --clean --no-install
+  cd android && ./gradlew bundleRelease assembleRelease      # AAB para Play, APK para instalar a mano
+  ```
+
+  El AAB (~50 MB) se sube a mano en Play Console.
+- Sin tocar Kotlin ni `app.json`, por OTA (`expo-updates`, canal `production`): `npm run update`. Lleva el JS y la
+  página (`assets/web.zip`). `runtimeVersion` sigue a `version`: subir `version` obliga a una versión nueva en Play.
+- Ficha de Play: `store/` (textos en `ficha.txt`; gráficos con `make_icon.py` y `make_store.py`; capturas de
+  `store/demo`: música de demostración y un host simulado para sacarlas en Chrome).
+
 ## Lo que falta
 
-- **Motor de descargas sin servidor** (soundlift y el servicio, como en el escritorio). Se decidirá al final, junto con
-  la publicación en Play Store: Google no admite apps que bajan de YouTube.
-- EAS (`eas init`), la ficha de Play y la publicación.
+- **Motor de descargas sin servidor** (soundlift y el servicio, como en el escritorio). Google no admite apps que bajan
+  de YouTube: no puede ir en la versión de Play.

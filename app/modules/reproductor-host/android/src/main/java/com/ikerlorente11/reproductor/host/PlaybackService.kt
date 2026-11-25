@@ -10,6 +10,7 @@ import androidx.media3.session.MediaSessionService
  * headphones' and Bluetooth buttons. Media3 makes it a foreground service while the music plays, so Android keeps
  * the app alive with the screen off. Swiping the app away while paused stops it; while it plays, the music goes on.
  */
+@androidx.annotation.OptIn(markerClass = [androidx.media3.common.util.UnstableApi::class])
 class PlaybackService : MediaSessionService() {
     private var session: MediaSession? = null
 
@@ -19,7 +20,10 @@ class PlaybackService : MediaSessionService() {
         val open = packageManager.getLaunchIntentForPackage(packageName)?.let {
             PendingIntent.getActivity(this, 0, it.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         }
-        session = MediaSession.Builder(this, player).also { b -> open?.let { b.setSessionActivity(it) } }.build()
+        session = MediaSession.Builder(this, player)
+            .setBitmapLoader(Playback.artwork(this))
+            .also { b -> open?.let { b.setSessionActivity(it) } }
+            .build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session

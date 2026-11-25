@@ -1,0 +1,46 @@
+FICHA DE GOOGLE PLAY · El Reproductor (com.ikerlorente11.reproductor)
+Idioma: español (es-ES). Los números entre paréntesis son caracteres usados / límite de Play.
+
+========================================================================
+DESCRIPCIÓN BREVE (76/80)
+========================================================================
+Tu música del móvil y la de tu servidor, sin anuncios, cuentas ni rastreo.
+
+========================================================================
+DESCRIPCIÓN COMPLETA (1983/4000)
+========================================================================
+El Reproductor es un reproductor para la música que ya tienes. Abre la app y tu música del móvil aparece ordenada por artistas, discos y carpetas, con sus portadas, lista para sonar. Sin cuentas ni registro, sin anuncios y sin conexión si no la necesitas.
+
+TU MÚSICA, ORDENADA
+• Inicio con lo añadido hace poco, todos tus discos y tus artistas.
+• Discos con sus portadas y canciones en orden, y la página de cada artista con todo lo suyo.
+• Tu biblioteca por artistas, listas y carpetas; quita las carpetas que no quieras ver.
+• Busca cualquier canción, disco o artista al momento.
+• Abre canciones sueltas desde cualquier otra app con «Abrir con» (MP3, FLAC, OGG, M4A y más).
+
+UN REPRODUCTOR COMO DEBE SER
+• Sigue sonando con la pantalla apagada, en la notificación, la pantalla de bloqueo y con los botones de los auriculares.
+• Cola que puedes ordenar, «Siguiente en la cola», aleatorio y repetir.
+• Listas de reproducción propias.
+• Letras de las canciones: las tuyas (.lrc) o las de LRCLIB, que siguen la canción.
+• Reproductor a pantalla completa con la portada, y en la tableta, todo a la vista con un menú lateral.
+
+TUS SERVIDORES (opcional)
+• Suma tu Navidrome, Airsonic, Gonic, Ampache u otro servidor compatible con Subsonic, o tu Jellyfin: sus canciones se juntan con las del móvil y suenan directamente desde él.
+• Conecta un servidor de El Reproductor y ve toda la música de tu nube: guarda discos y listas en el móvil para escucharlos sin conexión y sigue escuchando donde lo dejaste en otro dispositivo.
+
+PRIVACIDAD
+• Sin cuentas, sin anuncios y sin analíticas. La app no recoge datos: tus listas y tus ajustes se quedan en el móvil.
+• Solo se conecta a internet para los servidores que tú añades y para buscar letras.
+• Las contraseñas de tus servidores se guardan cifradas en el dispositivo.
+
+Tema claro y oscuro, en móvil y tableta, en vertical y en horizontal.
+
+El Reproductor no incluye música: reproduce la que ya tienes en el móvil y en tus propios servidores.
+
+========================================================================
+NOTAS DE LA VERSIÓN (máx. 500 cada una; de la más nueva a la más antigua)
+========================================================================
+
+--- 0.1.0 (Google Play, prueba interna) · 298/500 ---
+Primera versión: la música del móvil ordenada por artistas, discos y carpetas, reproducción en segundo plano con notificación y pantalla de bloqueo, cola, listas, letras y búsqueda. Opcional: tus servidores Subsonic (Navidrome…) o Jellyfin y tu servidor de El Reproductor, con escucha sin conexión.

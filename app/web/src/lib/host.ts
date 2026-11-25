@@ -59,17 +59,24 @@ let source: EventSource | null = null
 export function onHostEvent(listener: Listener, onOpen?: () => void): () => void {
   listeners.add(listener)
   if (onOpen) reopened.add(onOpen)
-  if (!source) {
-    source = new EventSource(hostUrl('/host/events'))
-    source.onmessage = (e) => {
-      let data: any
-      try { data = JSON.parse(e.data) } catch (_) { return }
-      for (const l of listeners) l(data)
-    }
-    source.onopen = () => { for (const f of reopened) f() }
-  }
+  if (!source) openEvents()
   return () => { listeners.delete(listener); if (onOpen) reopened.delete(onOpen) }
 }
+function openEvents() {
+  source?.close()
+  const es = new EventSource(hostUrl('/host/events'))
+  source = es
+  es.onmessage = (e) => {
+    let data: any
+    try { data = JSON.parse(e.data) } catch (_) { return }
+    for (const l of listeners) l(data)
+  }
+  es.onopen = () => { for (const f of reopened) f() }
+  // the browser gives up for good on some errors (an answer that is not a stream): try again ourselves
+  es.onerror = () => { if (es.readyState === EventSource.CLOSED && source === es) setTimeout(() => { if (source === es) openEvents() }, 2000) }
+}
+/** The stream looks alive but says nothing (it can stall while the web view is held back): a new one. */
+export function reopenHostEvents(): void { if (source) openEvents() }
 
 // ---- the page's settings and secrets, kept by the app ----
 export const prefs = {
@@ -150,6 +157,15 @@ export function androidOffline(): OfflineBackend {
 }
 
 // ---- the sound: Android's player (it goes on with the screen off; see Playback.kt) ----
+/** An absolute URL; a host's one with this run's token (the queue kept from an earlier run brings the old one, which the
+ * host refuses: the system showed those songs without their cover). */
+function current(url: string): string {
+  const u = new URL(url, location.href)
+  const host = new URL(hostUrl('/'))
+  if (u.origin === host.origin && u.searchParams.has('t')) u.searchParams.set('t', TOKEN)
+  return u.href
+}
+
 export function nativeOutput(): AudioOutput {
   let paused = true
   let time = 0
@@ -157,8 +173,7 @@ export function nativeOutput(): AudioOutput {
   let on: OutputEvents | null = null
   const cmd = (body: Record<string, unknown>) =>
     post<{ loaded: boolean; key?: string | null; t?: number; d?: number; playing?: boolean; ended?: boolean }>('/host/audio', body)
-  const absolute = (it: OutputItem): OutputItem => ({ ...it, url: it.url ? new URL(it.url, location.href).href : '',
-                                                       cover: it.cover ? new URL(it.cover, location.href).href : null })
+  const absolute = (it: OutputItem): OutputItem => ({ ...it, url: it.url ? current(it.url) : '', cover: it.cover ? current(it.cover) : null })
   /** What the player did while this page slept (or before it was loaded again): its song, its second, whether it plays. */
   async function resync() {
     if (!on) return
@@ -172,8 +187,18 @@ export function nativeOutput(): AudioOutput {
       if (s.playing && paused) { paused = false; on.play() } else if (!s.playing && !paused) { paused = true; on.pause() }
     } catch (_) {}
   }
+  /** when the player last said something: while it plays it tells the second twice a second */
+  let heard = Date.now()
+  setInterval(() => {
+    if (paused || document.hidden || Date.now() - heard < 3000) return
+    // playing, on screen and silent: the events stopped coming (the bar froze until the screen went off and on)
+    heard = Date.now()
+    resync()
+    reopenHostEvents()
+  }, 1000)
   onHostEvent((e) => {
     if (e.type !== 'audio' || !on) return
+    heard = Date.now()
     switch (e.ev) {
       case 'time': time = e.t; on.time(e.t); break
       case 'duration': on.duration(e.d); break

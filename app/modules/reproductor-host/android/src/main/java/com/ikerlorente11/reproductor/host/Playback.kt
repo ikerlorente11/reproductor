@@ -120,7 +120,9 @@ class Playback(private val context: Context, private val events: Events) {
             .setArtist(o.optString("artist"))
             .setAlbumTitle(o.optString("album"))
             .setIsPlayable(true)
-        o.optString("cover").takeIf { it.isNotEmpty() && it != "null" }?.let { meta.setArtworkUri(Uri.parse(it)) }
+        val cover = o.optString("cover").takeIf { it.isNotEmpty() && it != "null" }
+        if (cover != null) meta.setArtworkUri(Uri.parse(cover))
+        else meta.setArtworkData(artwork(context).fallbackPng, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
         val duration = o.optDouble("duration", 0.0)
         if (duration > 0) meta.setDurationMs((duration * 1000).toLong())
         return MediaItem.Builder().setMediaId(o.optString("key")).setUri(o.optString("url")).setMediaMetadata(meta.build()).build()
@@ -187,6 +189,11 @@ class Playback(private val context: Context, private val events: Events) {
         /** one player for the whole app: the service shows it, the host commands it */
         @Volatile var player: ExoPlayer? = null
             private set
+
+        private var art: Artwork? = null
+        /** the covers for the system, with the app's icon when a song has none (see Artwork) */
+        @androidx.annotation.OptIn(markerClass = [androidx.media3.common.util.UnstableApi::class])
+        fun artwork(context: Context): Artwork = art ?: Artwork(context.applicationContext).also { art = it }
 
         /** The service stopped (the app was closed while paused): the player goes with it. */
         fun drop() {

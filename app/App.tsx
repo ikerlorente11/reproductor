@@ -89,6 +89,8 @@ export default function App() {
 
   const scheme = system === 'dark' ? 'dark' : 'light'
   useEffect(() => { try { Promise.resolve(SystemUI.setBackgroundColorAsync(scheme === 'dark' ? DARK : LIGHT)).catch(() => {}) } catch (_) {} }, [scheme])
+  // the page follows the system's theme as the app sees it (the web view's own guess is sometimes wrong)
+  useEffect(() => { web.current?.injectJavaScript(`window.__reproductorScheme && window.__reproductorScheme(${JSON.stringify(scheme)}); true;`) }, [scheme])
 
   // the back button goes back in the page (its views live in the hash); on the first view it leaves the app (the music goes on)
   useEffect(() => {

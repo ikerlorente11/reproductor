@@ -131,6 +131,7 @@ onMounted(async () => {
 })
 // the permission given later (the library reads it then): Ajustes stops asking for it
 device.backend.onChanged((error) => { allowed.value = !error || !/permiso/.test(error) })
+device.backend.onProgress((p) => { if (p.done > 0) allowed.value = true })
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', onPop)
   document.removeEventListener('click', onLink, true)

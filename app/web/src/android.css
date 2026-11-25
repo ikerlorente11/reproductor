@@ -6,11 +6,18 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-scheme="light"]) {
     --oc-role-surface: #1c1c20; --oc-role-surface-container: #26262b; --oc-role-surface-container-high: #313137;
     --oc-role-outline-variant: #3a3a41; --oc-role-on-surface-variant: #a3a3ad; --oc-role-on-surface: #ededf2; --oc-role-background: #141417;
     color-scheme: dark;
   }
+}
+/* the app says which theme the system has (?scheme=, then window.__reproductorScheme): the web view's own
+   prefers-color-scheme sometimes says light with the system in dark */
+:root[data-scheme="dark"] {
+  --oc-role-surface: #1c1c20; --oc-role-surface-container: #26262b; --oc-role-surface-container-high: #313137;
+  --oc-role-outline-variant: #3a3a41; --oc-role-on-surface-variant: #a3a3ad; --oc-role-on-surface: #ededf2; --oc-role-background: #141417;
+  color-scheme: dark;
 }
 html, body { margin: 0; height: 100%; font: 15px/1.4 system-ui, Roboto, sans-serif; background: var(--oc-role-background); color: var(--oc-role-on-surface);
   -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }

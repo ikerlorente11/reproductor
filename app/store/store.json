@@ -1,0 +1,30 @@
+{
+  "name": "El Reproductor",
+  "bg_top": "#163a2a",
+  "bg_bottom": "#111314",
+  "accent": "#1fb866",
+  "text": "#f4faf6",
+  "subtext": "#c8dccf",
+  "icon": {
+    "src": "icono-fuente.png",
+    "bg": "#1fb866"
+  },
+  "feature": {
+    "shot": "02-reproductor.jpg",
+    "name_size": 70,
+    "tagline": [
+      "Tu música, la del móvil",
+      "y la de tu propio servidor"
+    ]
+  },
+  "shots": [
+    { "file": "01-inicio.jpg", "caption": "Tu música, ordenada y a mano" },
+    { "file": "02-reproductor.jpg", "caption": "Sigue sonando con la pantalla apagada" },
+    { "file": "03-disco.jpg", "caption": "Discos con sus portadas, en orden" },
+    { "file": "04-cola.jpg", "caption": "Ordena la cola a tu gusto" },
+    { "file": "05-biblioteca.jpg", "caption": "Artistas, listas y carpetas" },
+    { "file": "06-buscar.jpg", "caption": "Encuentra cualquier canción al momento" },
+    { "file": "07-artista.jpg", "caption": "Todo lo de cada artista, junto" },
+    { "file": "08-ajustes.jpg", "caption": "Suma tu Navidrome, Jellyfin o tu nube" }
+  ]
+}

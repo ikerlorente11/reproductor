@@ -8,14 +8,19 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "icon": "./assets/icon.png",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "package": "com.ikerlorente11.reproductor",
-      "versionCode": 1,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1fb866"
       },
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.WAKE_LOCK",
@@ -26,20 +31,40 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "category": ["DEFAULT", "BROWSABLE"],
+          "category": [
+            "DEFAULT",
+            "BROWSABLE"
+          ],
           "data": [
-            { "scheme": "content" },
-            { "scheme": "file" },
-            { "mimeType": "audio/*" },
-            { "mimeType": "application/ogg" },
-            { "mimeType": "application/x-flac" }
+            {
+              "scheme": "content"
+            },
+            {
+              "scheme": "file"
+            },
+            {
+              "mimeType": "audio/*"
+            },
+            {
+              "mimeType": "application/ogg"
+            },
+            {
+              "mimeType": "application/x-flac"
+            }
           ]
         }
       ]
     },
     "plugins": [
       "expo-dev-client",
-      ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -47,12 +72,29 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#fafafc",
-          "dark": { "image": "./assets/splash-icon.png", "backgroundColor": "#141417" }
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#141417"
+          }
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      "./plugins/withLocalSigning"
     ],
-    "runtimeVersion": { "policy": "appVersion" },
-    "owner": "ikerlorente11"
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "owner": "ikerlorente11",
+    "extra": {
+      "eas": {
+        "projectId": "075097cb-a2bd-4e1a-9f3e-fe7f9ec01b98"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/075097cb-a2bd-4e1a-9f3e-fe7f9ec01b98",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    }
   }
 }
