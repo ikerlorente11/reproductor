@@ -89,9 +89,10 @@ function el(): HTMLAudioElement {
   return audio
 }
 
-async function playAt(i: number) {
+/** Plays the queue's song `i`; true once it sounds (false: it failed, or the user moved on meanwhile). */
+async function playAt(i: number): Promise<boolean> {
   const song = state.queue[i]
-  if (!song || !resolver) return
+  if (!song || !resolver) return false
   const a = el()
   const from = i === state.index ? resumeAt : 0
   resumeAt = 0
@@ -107,14 +108,19 @@ async function playAt(i: number) {
   mediaSong(song)
   try {
     const resolved = await resolver(song)
-    if (mine !== seq) { resolved.release?.(); return }  // the user already moved on
+    if (mine !== seq) { resolved.release?.(); return false }  // the user already moved on
     current?.release?.()
     current = resolved
     a.src = resolved.url
     if (from) a.addEventListener('loadedmetadata', () => { if (mine === seq) a.currentTime = from }, { once: true })
     await a.play()
+    return mine === seq
   } catch (err: any) {
-    if (mine === seq) state.error = `No se pudo reproducir «${song.title}»: ${err?.message || err}`
+    // a browser tab never touched may not make sound by itself (autoplay): say what to do
+    const why = err?.name === 'NotAllowedError' ? 'el navegador no deja sonar una pestaña que no has tocado: pulsa ▶ en ella'
+      : err?.message || String(err)
+    if (mine === seq) state.error = `No se pudo reproducir «${song.title}»: ${why}`
+    return false
   } finally {
     if (mine === seq) state.loading = false
   }
@@ -216,9 +222,10 @@ export function currentSession(max = 1000): Session | null {
            shuffle: state.shuffle, repeat: state.repeat }
 }
 
-/** Takes a playback from another device: its queue, from its song and second (playing, unless `play` is false). */
-export function startSession(s: Session, play = true) {
-  if (!s.queue[s.index]) return
+/** Takes a playback from another device: its queue, from its song and second (playing, unless `play` is false).
+ *  Resolves whether it sounds (with `play`; the reason is in `player.error`). */
+export async function startSession(s: Session, play = true): Promise<boolean> {
+  if (!s?.queue?.[s.index]) { state.error = 'No llegó ninguna canción que reproducir'; return false }
   seq++
   state.queue = s.queue
   state.shuffle = !!s.shuffle
@@ -226,8 +233,10 @@ export function startSession(s: Session, play = true) {
   state.index = s.index
   state.time = resumeAt = Math.max(0, s.time || 0)
   state.duration = s.queue[s.index].duration || 0
-  if (play) playAt(s.index)
-  else { if (audio) { audio.pause(); audio.removeAttribute('src') } saveSession() }
+  if (play) return playAt(s.index)
+  if (audio) { audio.pause(); audio.removeAttribute('src') }
+  saveSession()
+  return true
 }
 
 /** Leaving the app: silence, and give back the last song's URL. */

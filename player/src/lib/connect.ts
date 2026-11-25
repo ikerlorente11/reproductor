@@ -90,10 +90,12 @@ const nameOf = (id: string) => connect.devices.find((d) => d.id === id)?.name ||
 function obey(c: DeviceCommand) {
   const d = c.data || {}
   switch (c.type) {
-    case 'transfer':
-      connect.controlling = ''
-      startSession(d.session as Session, d.play !== false)
-      notice(`Sonando aquí, desde ${nameOf(c.from)}.`)
+    case 'transfer': receive(c); break
+    case 'failed':
+      // the device this one handed its playback to could not make it sound: it goes on here, where it was
+      if (connect.controlling === c.from) connect.controlling = ''
+      if (nowPlaying.value) resume()
+      notice(`${nameOf(c.from)} no pudo empezar a sonar${d.why ? ` (${d.why})` : ''}. Sigue aquí.`, true)
       break
     case 'handoff': if (d.to) transferTo(String(d.to), false).catch(() => {}); break
     case 'play': resume(); break
@@ -107,6 +109,17 @@ function obey(c: DeviceCommand) {
     case 'shuffle': toggleShuffle(); break
     case 'repeat': toggleRepeat(); break
   }
+}
+
+/** A playback handed to this device: it sounds here, or the sender is told why not (and keeps it). */
+async function receive(c: DeviceCommand) {
+  const d = c.data || {}
+  connect.controlling = ''
+  const ok = await startSession(d.session as Session, d.play !== false)
+  if (ok || d.play === false) { notice(`Sonando aquí, desde ${nameOf(c.from)}.`); return }
+  const why = player.error.replace(/^No se pudo reproducir «[^»]*»: /, '') || 'no arrancó'
+  notice(`No se pudo empezar a sonar lo que llegó de ${nameOf(c.from)}: ${why}`, true)
+  send(c.from, 'failed', { why }).catch(() => {})
 }
 
 async function listen(mine: number) {
