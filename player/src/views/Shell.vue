@@ -24,6 +24,8 @@
           </a>
           <a href="#" :class="{ on: view.v === 'spotify' }" @click.prevent="go({ v: 'spotify' })"><span class="rp-ni"><i class="rp-i rp-i-up" aria-hidden="true"></i></span> Traer tu Spotify</a>
         </template>
+        <!-- on a phone «Ajustes» (at the bottom of the side on a wide screen) is one more tab -->
+        <a v-if="$slots.settings" href="#" class="rp-phone-only" :class="{ on: view.v === 'settings' }" @click.prevent="go({ v: 'settings' })"><span class="rp-ni"><i class="rp-i rp-i-settings" aria-hidden="true"></i></span> Ajustes</a>
       </nav>
       <div class="rp-lib">
         <div class="rp-libfilter">
