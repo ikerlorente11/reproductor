@@ -248,6 +248,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { ask } from '../lib/ask'
 import type { Mode, SpotifyAlbum, SpotifyArtist, SpotifyChoices, SpotifyImport, SpotifyPlaylist, SpotifySong, TrackHit } from '../lib/api'
 import { player, toggle } from '../lib/player'
 import { useStore } from '../lib/store'
@@ -346,7 +347,7 @@ async function upload(ev: Event) {
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
-  if (imp.value?.status === 'ready' && !confirmReplace()) return
+  if (imp.value?.status === 'ready' && !(await confirmReplace())) return
   uploading.value = true
   try {
     imp.value = (await api.spotifyUpload(file)).import
@@ -359,11 +360,11 @@ async function upload(ev: Event) {
   }
 }
 function confirmReplace() {
-  return window.confirm('Subir otra descarga sustituye a esta y pierdes lo que hayas decidido en la revisión. ¿Seguir?')
+  return ask('Subir otra descarga sustituye a esta y pierdes lo que hayas decidido en la revisión. ¿Seguir?', 'Seguir', true)
 }
 
 async function discard() {
-  if (!window.confirm('Se descarta esta importación y lo decidido en la revisión. No toca nada de tu música. ¿Seguir?')) return
+  if (!(await ask('Se descarta esta importación y lo decidido en la revisión. No toca nada de tu música. ¿Seguir?', 'Descartar', true))) return
   try {
     await api.spotifyDiscard()
     imp.value = null

@@ -27,11 +27,13 @@
           <small>{{ far ? 'Reproduciendo en' : shown.album ? 'Del disco' : 'Reproduciendo' }}</small>
           <strong class="rp-ellipsis">{{ far ? controlled?.name : shown.album || shown.artist }}</strong>
         </span>
-        <button v-if="!far" class="rp-iconbtn" aria-label="Cola" @click="showQueue = true; showLyrics = false"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
+        <button v-if="!far" class="rp-iconbtn" aria-label="Cola" @click="togglePanel('queue')"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
         <span v-else class="rp-iconbtn"></span>
       </header>
-      <div :class="['rp-full-art', { 'rp-full-lyrics': showLyrics && !far }]">
-        <LyricsPanel v-if="showLyrics && !far" @close="showLyrics = false" />
+      <div :class="['rp-full-art', { 'rp-full-panel': inFull, 'rp-full-lyrics': panel === 'lyrics' && inFull }]">
+        <LyricsPanel v-if="panel === 'lyrics' && inFull" @close="panel = ''" />
+        <QueuePanel v-else-if="panel === 'queue' && inFull" @close="panel = ''" />
+        <DevicesPanel v-else-if="panel === 'devices'" @close="panel = ''" />
         <img v-else-if="shown.cover" :src="shown.cover" alt="" />
         <span v-else class="rp-cover-none"><i class="rp-i rp-i-album" aria-hidden="true"></i></span>
       </div>
@@ -62,20 +64,9 @@
       <div class="rp-full-foot">
         <DevicePicker v-if="connect.on" />
         <span class="rp-grow"></span>
-        <button v-if="!far" :class="['rp-fbtn', { on: showLyrics }]" aria-label="Letra" @click="showLyrics = !showLyrics; showQueue = false"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
+        <button v-if="!far" :class="['rp-fbtn', { on: showLyrics }]" aria-label="Letra" @click="togglePanel('lyrics')"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
       </div>
       <p v-if="player.error && !far" class="rp-perror">{{ player.error }}</p>
-      <aside v-if="showQueue && !far" class="rp-queue rp-sheet" aria-label="Cola">
-        <header class="rp-queue-head"><strong>Cola</strong><span class="rp-muted rp-small">{{ player.index + 1 }} de {{ player.queue.length }}</span>
-          <span class="rp-grow"></span><button class="rp-mini" title="Cerrar" @click="showQueue = false"><i class="rp-i rp-i-close" aria-hidden="true"></i></button></header>
-        <ol>
-          <li v-for="(s, i) in player.queue" :key="s.key" :class="{ on: i === player.index, past: i < player.index }" @click="jump(i)">
-            <span class="rp-mini rp-queue-mark"><i :class="['rp-i', i === player.index ? 'rp-i-music' : 'rp-i-play']" aria-hidden="true"></i></span>
-            <span class="rp-tinfo"><span class="rp-ellipsis">{{ s.title }}</span><small class="rp-muted rp-ellipsis">{{ s.artist }}</small></span>
-            <button v-if="i !== player.index" class="rp-mini" title="Quitar de la cola" @click.stop="removeAt(i)"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
-          </li>
-        </ol>
-      </aside>
     </div>
   </template>
 
@@ -127,42 +118,32 @@
     </div>
     <div class="rp-pright">
       <DevicePicker v-if="connect.on" />
-      <button v-if="!far" :class="['rp-pbtn', { on: showLyrics }]" title="Letra" :aria-pressed="showLyrics" @click="showLyrics = !showLyrics; showQueue = false"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
-      <button v-if="!far" :class="['rp-pbtn', { on: showQueue }]" title="Cola" @click="showQueue = !showQueue; showLyrics = false"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
+      <button v-if="!far" :class="['rp-pbtn', { on: showLyrics }]" title="Letra" :aria-pressed="showLyrics" @click="togglePanel('lyrics')"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
+      <button v-if="!far" :class="['rp-pbtn', { on: showQueue }]" title="Cola" @click="togglePanel('queue')"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
       <span class="rp-muted"><i class="rp-i rp-i-volume" aria-hidden="true"></i></span>
       <input class="rp-vol" type="range" min="0" max="1" step="0.02" :value="view.volume" aria-label="Volumen"
              @input="control.volume(($event.target as HTMLInputElement).valueAsNumber)" />
     </div>
     <p v-if="player.error && !far" class="rp-perror">{{ player.error }}</p>
 
-    <aside v-if="showQueue && !far" class="rp-queue" aria-label="Cola">
-      <header class="rp-queue-head"><strong>Cola</strong><span class="rp-muted rp-small">{{ player.index + 1 }} de {{ player.queue.length }}</span>
-        <span class="rp-grow"></span><button class="rp-mini" title="Cerrar" @click="showQueue = false"><i class="rp-i rp-i-close" aria-hidden="true"></i></button></header>
-      <ol>
-        <li v-for="(s, i) in player.queue" :key="s.key" :class="{ on: i === player.index, past: i < player.index }" @dblclick="jump(i)">
-          <button class="rp-mini" :title="i === player.index ? 'Sonando' : 'Reproducir'" @click="jump(i)"><i :class="['rp-i', i === player.index ? 'rp-i-music' : 'rp-i-play']" aria-hidden="true"></i></button>
-          <span class="rp-tinfo"><span class="rp-ellipsis">{{ s.title }}</span><small class="rp-muted rp-ellipsis">{{ s.artist }}</small></span>
-          <button v-if="i !== player.index" class="rp-mini" title="Quitar de la cola" @click="removeAt(i)"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
-        </li>
-      </ol>
-    </aside>
   </footer>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { coverColor } from '../lib/cover-color'
-import { isPhone as phone, lyricsOpen } from '../lib/phone'
+import { isPhone as phone, panel, togglePanel } from '../lib/phone'
 import { fmtTime } from '../lib/library'
 import { connect, control, controlled, remote } from '../lib/connect'
 import { hasNext, hasPrev, jump, nowPlaying as song, player, removeAt } from '../lib/player'
 import { useStore, type View } from '../lib/store'
 import DevicePicker from './DevicePicker.vue'
 import LyricsPanel from './LyricsPanel.vue'
+import QueuePanel from './QueuePanel.vue'
+import DevicesPanel from './DevicesPanel.vue'
 
 defineOptions({ inheritAttrs: false })
 const { go, server, device } = useStore()
-const showQueue = ref(false)
 /** Driving another device (connect.ts): the bar shows what plays there and its buttons act there. */
 const far = computed(() => !!connect.controlling)
 const shown = computed(() => (far.value ? remote.value?.song || { title: 'Sin nada sonando', artist: '', album: '', cover: null } : song.value))
@@ -173,8 +154,11 @@ const view = computed(() => {
   return { playing: player.playing, loading: player.loading, time: player.time, duration: player.duration, shuffle: player.shuffle,
            repeat: player.repeat, volume: player.volume }
 })
-/** shared with the Shell, which shows them in the page's place on a wide screen */
-const showLyrics = lyricsOpen
+/** the panel open (lyrics, queue, devices), shared with the Shell, which shows it in the page's place on a wide screen */
+const showLyrics = computed(() => panel.value === 'lyrics')
+const showQueue = computed(() => panel.value === 'queue')
+/** a panel in the phone's player, in the cover's place (another device controlled: only its devices' panel) */
+const inFull = computed(() => !!panel.value && (!far.value || panel.value === 'devices'))
 /** Where the title leads: the album the song is on (a loose song's own row is not a page). */
 const albumOfSong = computed(() => song.value?.albumId || (song.value?.releaseId && song.value.releaseId > 0 ? song.value.releaseId : 0))
 /** Where the title and the artist lead: a song of this device to its pages here, a cloud one to the server's. */
@@ -229,19 +213,20 @@ function closeFull() {
   if (history.state?.rpFull) history.back()
   else full.value = false
 }
-function onPop() { if (full.value && !history.state?.rpFull) { full.value = false; showLyrics.value = false; showQueue.value = false } }
+function onPop() { if (full.value && !history.state?.rpFull) { full.value = false; panel.value = '' } }
+// on a phone a panel opened from the bar (the devices' button) opens the player, with the panel in it
+watch(panel, (p) => { if (p && phone.value && !full.value) openFull() })
 window.addEventListener('popstate', onPop)
 onBeforeUnmount(() => window.removeEventListener('popstate', onPop))
 /** A page from the player (the album, the artist): it takes the player's step, so back leads to where you were. */
 function goFromFull(v: View) {
   full.value = false
-  showLyrics.value = false
-  showQueue.value = false
+  panel.value = ''
   go(v, !!history.state?.rpFull)
 }
 // a swipe down closes it
 let swipeY: number | null = null
-function swipeStart(e: TouchEvent) { swipeY = showQueue.value || (e.target as HTMLElement)?.closest?.('.rp-lyrics') ? null : e.touches[0].clientY }
+function swipeStart(e: TouchEvent) { swipeY = (e.target as HTMLElement)?.closest?.('.rp-lyrics, .rp-panel') ? null : e.touches[0].clientY }
 function swipeEnd(e: TouchEvent) {
   if (swipeY !== null && e.changedTouches[0].clientY - swipeY > 110) closeFull()
   swipeY = null

@@ -6,7 +6,7 @@
       <h2>Música del móvil</h2>
       <template v-if="!allowed">
         <p class="rp-muted rp-small">El Reproductor necesita permiso para leer la música de este móvil.</p>
-        <div class="ra-actions"><button class="rp-btn rp-primary" @click="ask">Dar permiso</button></div>
+        <div class="ra-actions"><button class="rp-btn rp-primary" @click="askPermission">Dar permiso</button></div>
         <p class="rp-muted rp-tiny">Si Android ya no lo pregunta: Ajustes de Android › Aplicaciones › El Reproductor › Permisos › Música y audio.</p>
       </template>
       <template v-else>
@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { LibrariesSettings, type DeviceLibrary, type RemoteLibraries } from 'reproductor-player'
+import { LibrariesSettings, ask, type DeviceLibrary, type RemoteLibraries } from 'reproductor-player'
 import { tellApp } from './lib/host'
 import type { Connection } from './lib/server'
 
@@ -100,7 +100,7 @@ async function join() {
   } catch (err: any) { error.value = `No se pudo conectar: ${err?.message || err}` } finally { busy.value = false }
 }
 async function leave() {
-  if (!window.confirm('¿Desconectar el servidor? La música de tu nube deja de verse aquí; no se borra nada.')) return
+  if (!(await ask('¿Desconectar el servidor? La música de tu nube deja de verse aquí; no se borra nada.', 'Desconectar', true))) return
   busy.value = true
   try { await props.disconnect() } finally { busy.value = false }
 }
@@ -109,9 +109,9 @@ const lib = props.device.state
 const localRoots = computed(() => lib.roots.filter((r) => r.startsWith('/')))
 const short = (root: string) => root.replace(/^\/storage\/emulated\/\d+\/?/, 'Memoria interna/').replace(/^\/storage\/([^/]+)\/?/, 'Tarjeta $1/').replace(/\/$/, '') || root
 const countIn = (root: string) => { const n = lib.tracks.filter((t) => t.path.startsWith(root + '/')).length; return `${n} ${n === 1 ? 'canción' : 'canciones'}` }
-const ask = () => tellApp({ type: 'permission' })
+const askPermission = () => tellApp({ type: 'permission' })
 async function remove(root: string) {
-  if (!window.confirm(`¿Dejar de ver «${short(root)}»? Sus canciones salen de El Reproductor, pero no se borra ningún archivo.`)) return
+  if (!(await ask(`¿Dejar de ver «${short(root)}»? Sus canciones salen de El Reproductor, pero no se borra ningún archivo.`, 'Quitar', true))) return
   await props.device.backend.removeRoot(root)
 }
 async function showAll() { await props.device.backend.addRoot() }

@@ -37,6 +37,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { ask } from '../lib/ask'
 import type { RemoteLibraries } from '../lib/libraries'
 import { REMOTE_KINDS, type RemoteKind } from '../lib/remote'
 
@@ -61,7 +62,7 @@ async function add() {
   } catch (err: any) { error.value = `No se pudo añadir: ${err?.message || err}` } finally { busy.value = false }
 }
 async function remove(id: string, name: string) {
-  if (!window.confirm(`¿Quitar «${name}»? Sus canciones dejan de verse aquí; en el servidor no se toca nada.`)) return
+  if (!(await ask(`¿Quitar «${name}»? Sus canciones dejan de verse aquí; en el servidor no se toca nada.`, 'Quitar', true))) return
   await props.libraries.remove(id)
 }
 </script>

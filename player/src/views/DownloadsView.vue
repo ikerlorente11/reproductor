@@ -60,6 +60,7 @@
 
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
+import { ask } from '../lib/ask'
 import type { Release } from '../lib/api'
 import { albumOf, downloadState, kindLabel } from '../lib/library'
 import { useStore } from '../lib/store'
@@ -78,7 +79,7 @@ function open(r: Release) {
 }
 const cancelling = reactive(new Set<number>())
 async function cancel(r: Release) {
-  if (r.status === 'downloading' && !window.confirm(`¿Cancelar «${r.title}»? Lo que ya se haya bajado se queda en ${where}.`)) return
+  if (r.status === 'downloading' && !(await ask(`¿Cancelar «${r.title}»? Lo que ya se haya bajado se queda en ${where}.`, 'Cancelar la descarga', true))) return
   cancelling.add(r.release_id)
   try {
     await api.choose(r.release_id, 'cancel')

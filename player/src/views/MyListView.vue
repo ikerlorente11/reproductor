@@ -28,6 +28,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
+import { ask } from '../lib/ask'
 import type { Song } from '../lib/library'
 import { deleteList, listById, mine, recentSongs, removeFromList, renameList, toggleLike } from '../lib/mine'
 import { play } from '../lib/player'
@@ -66,8 +67,8 @@ function rename() {
   if (props.id && renaming.value) renameList(props.id, newName.value)
   renaming.value = false
 }
-function remove() {
-  if (!props.id || !window.confirm(`¿Borrar la lista «${list.value?.name}»? Las canciones no se tocan.`)) return
+async function remove() {
+  if (!props.id || !(await ask(`¿Borrar la lista «${list.value?.name}»? Las canciones no se tocan.`, 'Borrar', true))) return
   deleteList(props.id)
   notify('Lista borrada.')
   go({ v: 'home' })

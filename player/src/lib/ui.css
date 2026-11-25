@@ -762,7 +762,6 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 .rp-minibar-play .rp-i { width: 26px; height: 26px; }
 .rp-minibar-progress { position: absolute; left: 8px; right: 8px; bottom: 3px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.22); overflow: hidden; }
 .rp-minibar-progress i { display: block; height: 100%; background: #fff; }
-.rp-phone .rp-devmenu { position: fixed; left: 10px; right: 10px; bottom: 136px; top: auto; width: auto; z-index: 90; color: var(--oc-role-on-surface, #1b1b1f); }
 
 /* the player over the whole screen */
 .rp-full { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; gap: 14px; padding: 10px 22px 22px; color: #fff; overflow: hidden;
@@ -863,3 +862,53 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 .rp-full-lyrics .rp-lyrics-adjust { border-top-color: rgba(255,255,255,.2); }
 .rp-full-lyrics .rp-lyrics-offset { color: #fff; }
 .rp-full-lyrics .rp-lyrics-head { border-bottom: 0; padding-bottom: 0; }
+
+/* ---- the player's panels (queue, devices; the lyrics have their own look): in the page's place or the cover's ---- */
+.rp-panel { display: flex; flex-direction: column; min-height: 0; }
+.rp-panel-head { display: flex; align-items: center; gap: 12px; padding: 4px 0 12px; }
+.rp-panel-title { flex: 1; display: grid; gap: 2px; min-width: 0; line-height: 1.25; }
+.rp-panel-title strong { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-panel-kicker { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rp-accent-2); }
+.rp-panel-body { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: 6px; align-content: start; scrollbar-width: thin; }
+.rp-panel.rp-panel-page { height: 100%; padding: 18px 24px 24px; max-width: 760px; }
+.rp-queuelist { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.rp-queuelist li { display: grid; grid-template-columns: 44px minmax(0, 1fr) 32px; gap: 12px; align-items: center; padding: 6px 8px; border-radius: 10px; cursor: pointer; }
+.rp-queuelist li:hover { background: var(--rp-surface-2); }
+.rp-queuelist li.on { color: var(--rp-accent-2); background: var(--rp-surface-2); }
+.rp-queuelist li.past { opacity: .55; }
+.rp-queuelist-cover { width: 44px; height: 44px; border-radius: 5px; object-fit: cover; font-size: 18px; }
+.rp-queuelist-now { justify-self: center; width: 18px; height: 18px; }
+.rp-devlist .rp-dev { width: 100%; text-align: left; font: inherit; }
+/* in a phone's player: on its colour, white */
+.rp-full-art.rp-full-panel { align-items: stretch; justify-content: stretch; padding: 0; }
+.rp-full-panel .rp-panel { width: 100%; height: 100%; color: #fff; }
+.rp-full-panel .rp-panel-kicker { color: rgba(255,255,255,.8); }
+.rp-full-panel .rp-muted { color: rgba(255,255,255,.68); }
+.rp-full-panel .rp-mini, .rp-full-panel .rp-btn:not(.rp-primary) { color: #fff; border-color: rgba(255,255,255,.35); background: transparent; }
+.rp-full-panel .rp-queuelist li:hover { background: transparent; }
+.rp-full-panel .rp-queuelist li.on { background: rgba(255,255,255,.1); color: #fff; }
+.rp-full-panel .rp-queuelist li.on .rp-ellipsis { color: var(--rp-accent); }
+.rp-full-panel .rp-dev { color: #fff; }
+.rp-full-panel .rp-dev.on, .rp-full-panel .rp-dev.on .rp-dev-text small { color: var(--rp-accent); }
+.rp-full-panel .rp-dev-far { background: rgba(255,255,255,.08); }
+
+/* the lyrics: the line that sounds stands out by its colour, not its size (a long one grown would be cut at the sides) */
+.rp-lyrics-lines li { overflow-wrap: anywhere; }
+.rp .rp-lyrics-lines li.on { transform: none; }
+
+/* a phone: the menus of a button (add to a list…) are a sheet from the bottom over the whole width, not a box */
+.rp-phone .rp-menu { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: auto; max-height: 72vh; z-index: 96; padding: 14px 12px 18px;
+  border-radius: 18px 18px 0 0; border: 0; box-shadow: 0 -12px 40px rgba(0,0,0,.45); }
+.rp-phone .rp-menu .rp-menu-item { padding: 12px 10px; font-size: 15px; }
+.rp-menu-backdrop { display: none; }
+.rp-phone .rp-menu-backdrop { display: block; position: fixed; inset: 0; z-index: 95; background: rgba(0,0,0,.5); }
+
+/* a dialog (deleting, a question): on a phone a sheet from the bottom, like the menus */
+.rp-phone .rp-modal { align-items: flex-end; padding: 0; }
+.rp-phone .rp-dialog { max-width: none; border-radius: 18px 18px 0 0; padding: 20px 18px 22px; animation: rp-sheet-in .2s ease-out; }
+.rp-phone .rp-dialog .rp-rules-actions { justify-content: stretch; }
+.rp-phone .rp-dialog .rp-rules-actions .rp-btn { flex: 1; justify-content: center; min-height: 44px; }
+.rp-phone .rp-menu { animation: rp-sheet-in .2s ease-out; }
+@keyframes rp-sheet-in { from { transform: translateY(40px); opacity: .5; } }
+/* the toasts above the player's bar and the tabs */
+.rp-phone .rp-toast { bottom: 150px; }

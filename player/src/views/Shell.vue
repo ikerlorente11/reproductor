@@ -136,8 +136,10 @@
       <p v-if="state.error" class="rp-banner rp-banner-error">
         {{ state.error }} <button class="rp-btn rp-small" @click="connect()">Reintentar</button>
       </p>
-      <!-- the lyrics (from the player's bar) take the page's place until closed or another page is opened -->
-      <LyricsPanel v-if="lyricsOpen && !phone" class="rp-lyrics-page" @close="lyricsOpen = false" />
+      <!-- the player's panels (lyrics, queue, devices) take the page's place until closed or another page is opened -->
+      <LyricsPanel v-if="panel === 'lyrics' && !phone" class="rp-lyrics-page" @close="panel = ''" />
+      <QueuePanel v-else-if="panel === 'queue' && !phone" class="rp-panel-page" @close="panel = ''" />
+      <DevicesPanel v-else-if="panel === 'devices' && !phone" class="rp-panel-page" @close="panel = ''" />
       <template v-else-if="view.v === 'home'"><HomeView v-if="server" /><DeviceHomeView v-else-if="device" /></template>
       <template v-else-if="view.v === 'search'">
         <template v-if="server"><SearchView :q="view.q || ''" :tab="view.tab" /><DeviceSearchView v-if="device && view.q" :q="view.q" embedded /></template>
@@ -187,6 +189,15 @@
         </div>
       </div>
     </div>
+    <div v-if="question.resolve" class="rp-modal" @click.self="answer(false)">
+      <div class="rp-dialog" role="alertdialog" :aria-label="question.text">
+        <p>{{ question.text }}</p>
+        <div class="rp-rules-actions">
+          <button class="rp-btn" @click="answer(false)">Cancelar</button>
+          <button :class="['rp-btn', question.danger ? 'rp-danger-solid' : 'rp-primary']" @click="answer(true)">{{ question.ok }}</button>
+        </div>
+      </div>
+    </div>
     <div v-if="toast.text" :class="['rp-toast', { 'rp-toast-error': toast.error }]" role="status">{{ toast.text }}</div>
   </div>
 </template>
@@ -225,8 +236,11 @@ import DeviceHomeView from './DeviceHomeView.vue'
 import DeviceSearchView from './DeviceSearchView.vue'
 import MyListView from './MyListView.vue'
 import LibraryPage from './LibraryPage.vue'
-import { isPhone as phone, lyricsOpen } from '../lib/phone'
+import { isPhone as phone, panel } from '../lib/phone'
+import { answer, question } from '../lib/ask'
 import LyricsPanel from './LyricsPanel.vue'
+import QueuePanel from './QueuePanel.vue'
+import DevicesPanel from './DevicesPanel.vue'
 import DeviceDownloadView from './DeviceDownloadView.vue'
 
 /**
@@ -286,7 +300,7 @@ let toastTimer: any = null
 
 const view = computed<View>(() => props.view)
 function go(next: View, replace = false) { props.navigate(next, replace) }
-watch(() => JSON.stringify(view.value), () => { mainEl.value?.scrollTo({ top: 0 }); if (!phone.value) lyricsOpen.value = false })
+watch(() => JSON.stringify(view.value), () => { mainEl.value?.scrollTo({ top: 0 }); if (!phone.value) panel.value = '' })
 
 function notify(text: string, error = false) {
   toast.text = text

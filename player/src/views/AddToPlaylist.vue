@@ -3,6 +3,8 @@
     <button :class="small ? 'rp-mini rp-add-mini' : 'rp-btn'" :title="title" :aria-label="title" :aria-expanded="open" @click.stop="toggle">
       <template v-if="small"><i class="rp-i rp-i-add" aria-hidden="true"></i></template><template v-else><i class="rp-i rp-i-add" aria-hidden="true"></i> Añadir a lista</template>
     </button>
+    <!-- a phone: the menu is a sheet from the bottom; touching outside it closes it -->
+    <div v-if="open" class="rp-menu-backdrop" @click.stop="close()"></div>
     <div v-if="open && !choosing" :class="['rp-menu', 'rp-menu-lists', { 'rp-menu-up': up }]" role="dialog" :aria-label="title" @click.stop>
       <p class="rp-menu-head rp-muted rp-small">Guardar {{ what }} en…</p>
       <input v-if="state.playlists.length > 6" v-model="filter" class="rp-input rp-menu-filter" type="search" placeholder="Buscar una lista" aria-label="Buscar una lista" />

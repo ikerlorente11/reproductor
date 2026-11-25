@@ -90,7 +90,7 @@ function headerJson(headers: Record<string, string>): string {
 
 /** `fetch` as the page's code uses it (the service, soundlift, Subsonic, LRCLIB…), made by the host: the server's own
  * answer comes back (status, type, body); when it cannot be reached it rejects, like the browser's. */
-export const hostFetch: typeof fetch = async (input, init = {}) => {
+export const hostFetch: typeof fetch = async (input, init: RequestInit = {}) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   const given: Record<string, string> = {}
   new Headers(init.headers || (input instanceof Request ? input.headers : undefined)).forEach((v, k) => { given[k] = v })

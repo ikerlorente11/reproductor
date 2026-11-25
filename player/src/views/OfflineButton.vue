@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { ask } from '../lib/ask'
 import { useStore } from '../lib/store'
 
 /** An album's or a playlist's songs kept on this device (an app connected to a server). */
@@ -33,7 +34,7 @@ async function save() {
   } catch (err: any) { notify(err?.message || String(err), true) }
 }
 async function drop() {
-  if (!window.confirm('¿Quitar la copia de este equipo? Sigue en tu nube; solo deja de sonar sin conexión.')) return
+  if (!(await ask('¿Quitar la copia de este equipo? Sigue en tu nube; solo deja de sonar sin conexión.', 'Quitar', true))) return
   if (props.listId) offline!.setKept(props.listId, false)
   try { await offline!.remove(props.paths); notify('Copia quitada de este equipo.') } catch (err: any) { notify(err?.message || String(err), true) }
 }
