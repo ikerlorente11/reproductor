@@ -24,6 +24,7 @@
           <div class="rp-hero-actions">
             <button v-if="songs.length" class="rp-btn rp-primary rp-round-btn" title="Reproducir" @click="play(songs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
             <button v-if="songs.length" class="rp-btn" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
+            <OfflineButton :paths="songs.map((s) => s.path)" :list-id="pl.id" />
             <button class="rp-btn rp-small" @click="startRename">Cambiar nombre</button>
             <button class="rp-btn rp-small rp-danger" @click="askDelete = true">Borrar lista</button>
           </div>
@@ -128,6 +129,7 @@
 </template>
 
 <script setup lang="ts">
+import OfflineButton from './OfflineButton.vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { Playlist, PlaylistEntry, PlaylistSong, Release } from '../lib/api'
 import { downloadState, fmtTime, isBusy, kindLabel, playlistSongs, fmtDate } from '../lib/library'

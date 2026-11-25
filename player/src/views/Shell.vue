@@ -174,6 +174,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref,
 import type { Api } from '../lib/api'
 import type { DeviceLibrary } from '../lib/device'
 import type { LocalEngine } from '../lib/engine'
+import type { Offline } from '../lib/offline'
 import { createList, mine } from '../lib/mine'
 import { Soundlift, soundliftState } from '../lib/soundlift'
 import { isAudioName, isBusy, libraryArtists, releaseSongs, type Song } from '../lib/library'
@@ -221,6 +222,8 @@ const props = defineProps<{
   device?: DeviceLibrary | null
   /** an app's own download engine (without a server it downloads music to the device) */
   engine?: LocalEngine | null
+  /** an app connected to a server: songs of the cloud kept on the device («Guardar en este equipo») */
+  offline?: Offline | null
   view: View
   navigate: (view: View, replace?: boolean) => void
   musicRoot?: string
@@ -244,6 +247,7 @@ const sl = props.sl || new Soundlift('', () => '')
 const files = props.files
 const device = props.device || null
 const engine = props.engine || null
+const offline = server ? props.offline || null : null
 const musicRoot = props.musicRoot || 'Música'
 const cloudName = props.cloudName || 'tu nube'
 const where = props.where || 'tu nube'
@@ -473,7 +477,7 @@ async function pruneFolders(paths: string[]) {
   }
 }
 
-provide(STORE, { api, server, device, engine, musicRoot, cloudName, where, files, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
+provide(STORE, { api, server, device, engine, offline, musicRoot, cloudName, where, files, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
 
 // ---- folders of the music root (the music that is not by followed artist yet) ----
 const folders = ref<{ path: string; name: string }[]>([])
@@ -522,8 +526,16 @@ onMounted(() => {
   if (server) { sl.refreshCounts(); schedule() }
   window.addEventListener('keydown', onKey)
 })
+// the playlists kept on the device get what was added to them (on connecting, then every 10 minutes)
+let keepTimer: any = null
+if (offline) {
+  const keep = () => { if (state.connected) offline.syncKept(api).catch(() => {}) }
+  watch(() => state.connected, (on) => { if (on) keep() })
+  keepTimer = setInterval(keep, 600000)
+}
 onBeforeUnmount(() => {
   stopConnect()
+  clearInterval(keepTimer)
   clearTimeout(poll)
   window.removeEventListener('keydown', onKey)
 })

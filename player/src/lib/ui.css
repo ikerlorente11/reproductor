@@ -692,3 +692,8 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 
 /* ---- the download engine of an app (installing it) ---- */
 .rp-engine-bar { width: min(420px, 80%); }
+
+/* ---- songs of the cloud kept on the device ---- */
+.rp-offline { display: inline-flex; align-items: center; gap: 10px; }
+.rp-btn.rp-on { color: var(--rp-accent-2); border-color: var(--rp-accent); }
+.rp-offline .rp-check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }

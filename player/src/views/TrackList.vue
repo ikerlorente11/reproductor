@@ -32,6 +32,7 @@
         <button v-if="t.have === 'done' && t.file" class="rp-mini rp-hover rp-mini-danger" :title="`Borrar esta canción de ${where}`" aria-label="Borrar esta canción" @click="removeSong(t)">
           <i class="rp-i rp-i-delete" aria-hidden="true"></i>
         </button>
+        <span v-if="offline?.has(t.file?.path)" class="rp-muted rp-tiny" title="En este equipo: suena sin conexión"><i class="rp-i rp-i-computer" aria-hidden="true"></i></span>
         <span v-if="showDate" class="rp-muted rp-small rp-tdate">{{ fmtDate((t as any).date) }}</span>
         <span class="rp-muted rp-small rp-tdur">{{ fmtTime(t.duration) }}</span>
       </span>
@@ -55,7 +56,7 @@ import SelectionBar from './SelectionBar.vue'
 /** Songs of the catalogue (an album, a Deezer playlist, search results), each with what I have of it. */
 const props = withDefaults(defineProps<{ hits: TrackHit[]; showArtist?: boolean; showAlbum?: boolean; showDate?: boolean }>(), { showArtist: false, showAlbum: false, showDate: false })
 const emit = defineEmits<{ changed: [] }>()
-const { api, state, go, notify, refreshFollows, refreshDownloads, remove, where } = useStore()
+const { api, state, go, notify, refreshFollows, refreshDownloads, remove, where, offline } = useStore()
 const busy = reactive(new Set<number>())
 
 // ---- choosing several songs to delete them at once (shift-click takes the stretch in between) ----

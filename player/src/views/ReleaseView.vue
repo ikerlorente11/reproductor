@@ -17,6 +17,7 @@
             <button v-if="songs.length" class="rp-btn rp-primary rp-round-btn" title="Reproducir" @click="play(songs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
             <button v-if="songs.length" class="rp-btn" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
             <button v-if="songs.length" class="rp-btn" title="Que suene después de la canción actual" @click="playNext(songs); notify('Sonará a continuación.')">Siguiente en la cola</button>
+            <OfflineButton :paths="songs.map((s) => s.path)" />
             <button v-if="canDownload" class="rp-btn rp-primary" :disabled="busy" @click="download">
               <span v-if="busy" class="rp-spin"></span> <i class="rp-i rp-i-download" aria-hidden="true"></i> Bajar {{ missing === album.songs.length ? 'el disco' : `lo que falta (${missing})` }}
             </button>
@@ -44,6 +45,7 @@ import { heldSongs, kindLabel, statusLabel, fmtDate } from '../lib/library'
 import { play, playNext } from '../lib/player'
 import { useStore } from '../lib/store'
 import AddToPlaylist from './AddToPlaylist.vue'
+import OfflineButton from './OfflineButton.vue'
 import TrackList from './TrackList.vue'
 
 /** Any release of the catalogue: mine (downloaded, on its way, left out) or not; each song with what I have. */

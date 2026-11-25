@@ -3,6 +3,7 @@ import { inject, reactive, type InjectionKey } from 'vue'
 import type { Api, Downloads, Follow, PlaylistSummary, Release } from './api.ts'
 import type { DeviceLibrary } from './device.ts'
 import type { LocalEngine } from './engine.ts'
+import type { Offline } from './offline.ts'
 import type { Song } from './library.ts'
 import type { Soundlift } from './soundlift.ts'
 import type { View } from './views.ts'
@@ -39,6 +40,8 @@ export interface Store {
   device: DeviceLibrary | null
   /** an app's own download engine (soundlift on the device), when it has one */
   engine: LocalEngine | null
+  /** songs of the cloud kept on the device (an app connected to a server) */
+  offline: Offline | null
   musicRoot: string
   /** the cloud's name, as people know it (where deleted songs go, where soundlift delivers) */
   cloudName: string
