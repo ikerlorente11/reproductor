@@ -5,6 +5,7 @@
  */
 import { computed, reactive, watch } from 'vue'
 import { queueFrom, shuffled, type Song } from './library.ts'
+import { recordPlay } from './mine.ts'
 
 type Resolved = { url: string; release?: () => void }
 
@@ -29,6 +30,10 @@ let current: Resolved | null = null
 let seq = 0
 /** Where to start the next song that loads (the second it was left at, restored or chosen while paused). */
 let resumeAt = 0
+/** how long the current song has really played (seeks aside), and whether it already counted as listened */
+let heard = 0
+let lastTick = 0
+let counted = false
 
 // ---- the session: queue, song and second kept in this browser, so a reload or another day goes on from there ----
 const SESSION = 'reproductor.session'
@@ -68,10 +73,18 @@ function el(): HTMLAudioElement {
   if (audio) return audio
   audio = new Audio()
   audio.volume = state.volume
-  audio.addEventListener('timeupdate', () => { state.time = audio!.currentTime })
+  audio.addEventListener('timeupdate', () => {
+    const t = audio!.currentTime
+    // listened: past half the song or 30 s of it (each play of it counts once)
+    if (t > lastTick && t - lastTick < 2) heard += t - lastTick
+    lastTick = t
+    const song = state.queue[state.index]
+    if (song && !counted && heard >= Math.min(30, (state.duration || 60) / 2)) { counted = true; recordPlay(song) }
+    state.time = t
+  })
   audio.addEventListener('durationchange', () => { state.duration = isFinite(audio!.duration) ? audio!.duration : 0 })
-  audio.addEventListener('play', () => { state.playing = true })
-  audio.addEventListener('pause', () => { state.playing = false; saveSession() })
+  audio.addEventListener('play', () => { state.playing = true; mediaState() })
+  audio.addEventListener('pause', () => { state.playing = false; saveSession(); mediaState() })
   audio.addEventListener('ended', () => { if (!next()) { state.playing = false } })
   return audio
 }
@@ -88,6 +101,10 @@ async function playAt(i: number) {
   state.loading = true
   state.error = ''
   const mine = ++seq
+  heard = 0
+  lastTick = from
+  counted = false
+  mediaSong(song)
   try {
     const resolved = await resolver(song)
     if (mine !== seq) { resolved.release?.(); return }  // the user already moved on
@@ -189,4 +206,25 @@ export function stop() {
   current = null
   state.playing = false
   state.loading = false
+}
+
+// ---- the system's media controls (keyboard media keys, the volume flyout, the lock screen) ----
+const media = typeof navigator !== 'undefined' && 'mediaSession' in navigator ? navigator.mediaSession : null
+function mediaSong(song: Song) {
+  if (!media || typeof MediaMetadata === 'undefined') return
+  try {
+    media.metadata = new MediaMetadata({ title: song.title, artist: song.artist, album: song.album,
+                                         artwork: song.cover ? [{ src: song.cover, sizes: '512x512' }] : [] })
+  } catch (_) {}
+}
+function mediaState() {
+  if (media) media.playbackState = state.playing ? 'playing' : 'paused'
+}
+if (media) {
+  const on = (action: MediaSessionAction, fn: (d: MediaSessionActionDetails) => void) => { try { media.setActionHandler(action, fn) } catch (_) {} }
+  on('play', () => { if (!state.playing) toggle() })
+  on('pause', () => { if (state.playing) toggle() })
+  on('previoustrack', () => prev())
+  on('nexttrack', () => { next() })
+  on('seekto', (d) => { if (d.seekTime !== undefined && state.duration) seekTo(d.seekTime / state.duration) })
 }

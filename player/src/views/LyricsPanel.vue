@@ -29,7 +29,7 @@
     </div>
 
     <section v-if="adjusting" class="rp-lyrics-adjust" aria-label="Ajustar la sincronización">
-      <p class="rp-muted rp-small">Toca la línea que está sonando ahora para encajarla, o muévela a mano. Se guarda para todos.</p>
+      <p class="rp-muted rp-small">Toca la línea que está sonando ahora para encajarla, o muévela a mano. {{ localOnly ? 'Se guarda en este equipo.' : 'Se guarda para todos.' }}</p>
       <div class="rp-lyrics-steps">
         <button class="rp-btn rp-small" title="La letra va una línea por delante: que vaya una línea más tarde" :disabled="current < 1" @click="fitLine(current - 1)">↑ Línea</button>
         <button class="rp-btn rp-small" title="Que la letra vaya medio segundo antes" @click="nudge(-0.5)">−0,5</button>
@@ -58,9 +58,12 @@ import type { Lyrics } from '../lib/api'
 import { fmtTime } from '../lib/library'
 import { nowPlaying as song, player, seekTo } from '../lib/player'
 import { useStore } from '../lib/store'
+import { localLyrics, saveLocalOffset } from '../lib/lyrics'
 
 const emit = defineEmits<{ close: [] }>()
-const { api, notify } = useStore()
+const { api, server, device, notify } = useStore()
+/** this lyrics' shift is kept on this device (they did not come from the server) */
+const localOnly = computed(() => !!lyrics.value && (!server || lyrics.value.source === 'archivo .lrc'))
 const lyrics = ref<Lyrics | null>(null)
 const loading = ref(false)
 const error = ref('')
@@ -76,7 +79,10 @@ async function load() {
   const mine = ++seq
   loading.value = true
   try {
-    const got = await api.lyrics(s.artist, s.title, s.album, s.duration || player.duration, s.trackId)
+    // a song of this device may bring its own .lrc; else the server (which asks Deezer and LRCLIB), else LRCLIB
+    const lrc = s.device && device?.backend.lyrics ? await device.backend.lyrics(s.device).catch(() => null) : null
+    const got = lrc || !server ? await localLyrics({ ...s, duration: s.duration || player.duration }, lrc)
+      : await api.lyrics(s.artist, s.title, s.album, s.duration || player.duration, s.trackId)
     if (mine === seq) lyrics.value = got
   } catch (err: any) {
     if (mine === seq) error.value = `No se pudo traer la letra: ${err?.message || err}`
@@ -104,6 +110,14 @@ async function saveAdjust() {
   const l = lyrics.value
   if (!l?.source) return
   saving.value = true
+  if (localOnly.value) {
+    saveLocalOffset(l.key, draft.value)
+    l.offset = draft.value
+    adjusting.value = false
+    saving.value = false
+    notify(l.offset ? `Letra ajustada ${fmtOffset(l.offset)}.` : 'Letra como vino.')
+    return
+  }
   try {
     const r = await api.setLyricsOffset(l.key, l.source, draft.value)
     l.offset = r.offset

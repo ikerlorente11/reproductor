@@ -337,6 +337,14 @@ a.rp-strip:hover { filter: brightness(.97); }
 .rp-i-refresh { --rp-i: url('/icons/refresh-line.svg'); }
 .rp-i-up { --rp-i: url('/icons/arrow-up-s-line.svg'); }
 .rp-i-down { --rp-i: url('/icons/arrow-down-s-line.svg'); }
+.rp-i-heart { --rp-i: url('/icons/heart-line.svg'); }
+.rp-i-heart-fill { --rp-i: url('/icons/heart-fill.svg'); }
+.rp-i-computer { --rp-i: url('/icons/computer-line.svg'); }
+.rp-i-settings { --rp-i: url('/icons/settings-3-line.svg'); }
+.rp-i-folder-add { --rp-i: url('/icons/folder-add-line.svg'); }
+.rp-i-folder-open { --rp-i: url('/icons/folder-open-line.svg'); }
+.rp-i-time { --rp-i: url('/icons/time-line.svg'); }
+.rp-i-cloud { --rp-i: url('/icons/cloud-line.svg'); }
 .rp-mini .rp-i { width: 15px; height: 15px; vertical-align: middle; }
 .rp-pbtn .rp-i { width: 18px; height: 18px; }
 .rp-pbtn.rp-pmain .rp-i, .rp-round-btn .rp-i { width: 20px; height: 20px; }
@@ -498,3 +506,15 @@ a.rp-strip:hover { filter: brightness(.97); }
 .rp-plinks .rp-plink:hover { text-decoration: underline; color: var(--oc-role-on-surface, inherit); }
 /* An artist's «Populares»: five songs, ten with «Ver más». */
 .rp-top .rp-top-more { margin-top: 6px; }
+
+/* ---- the music of a device, and what is yours ---- */
+.rp-like.on, .rp-like.on:hover { color: var(--rp-accent); opacity: 1; }
+.rp-tcover { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; display: block; }
+.rp-tplay:has(.rp-tcover) { position: relative; }
+.rp-tplay:has(.rp-tcover) .rp-ticon { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; border-radius: 6px; background: rgba(0,0,0,.45); color: #fff; }
+.rp-tracks li:hover .rp-tplay:has(.rp-tcover) .rp-ticon, .rp-tracks li.on .rp-tplay:has(.rp-tcover) .rp-ticon { display: flex; }
+.rp-hero-round { border-radius: 50%; }
+.rp-hero-mine { display: flex; align-items: center; justify-content: center; font-size: 64px; color: #fff; background: linear-gradient(135deg, var(--rp-accent-2), #0b5d35); }
+.rp-center { text-align: center; }
+.rp-page-head select.rp-input { padding: 7px 10px; border-radius: 999px; font-size: 13px; }
+.rp-back.on { color: var(--rp-accent-2) !important; background: var(--rp-surface-2); }

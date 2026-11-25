@@ -1,6 +1,7 @@
 /** What every page of the app shares: the API, the followed artists and how to move around. */
 import { inject, reactive, type InjectionKey } from 'vue'
 import type { Api, Downloads, Follow, PlaylistSummary, Release } from './api.ts'
+import type { DeviceLibrary } from './device.ts'
 import type { Song } from './library.ts'
 import type { Soundlift } from './soundlift.ts'
 import type { View } from './views.ts'
@@ -29,7 +30,12 @@ export interface Files {
 }
 
 export interface Store {
+  /** the El Reproductor service; only the server's pages use it (they show only when `server`) */
   api: Api
+  /** connected to a server of El Reproductor (else only the device's music and what is yours on it) */
+  server: boolean
+  /** the music of this device, when the platform has some (the apps) */
+  device: DeviceLibrary | null
   musicRoot: string
   /** the cloud's name, as people know it (where deleted songs go, where soundlift delivers) */
   cloudName: string

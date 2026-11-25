@@ -4,16 +4,18 @@
       <img v-if="song.cover" :src="song.cover" alt="" class="rp-pcover" />
       <span v-else class="rp-pcover rp-cover-none"><i class="rp-i rp-i-album" aria-hidden="true"></i></span>
       <span class="rp-pinfo-text">
-        <a v-if="albumOfSong" href="#" class="rp-ellipsis rp-plink" title="Ir a la canción, en su disco" @click.prevent="go({ v: 'release', id: albumOfSong })"><strong>{{ song.title }}</strong></a>
+        <a v-if="albumView" href="#" class="rp-ellipsis rp-plink" title="Ir a la canción, en su disco" @click.prevent="go(albumView)"><strong>{{ song.title }}</strong></a>
         <strong v-else class="rp-ellipsis">{{ song.title }}</strong>
         <small class="rp-muted rp-ellipsis rp-plinks">
-          <a v-if="song.artistId && song.artist" href="#" class="rp-plink" title="Ir al artista" @click.prevent="go({ v: 'artist', id: song.artistId })">{{ song.artist }}</a>
+          <a v-if="artistView && song.artist" href="#" class="rp-plink" title="Ir al artista" @click.prevent="go(artistView)">{{ song.artist }}</a>
           <template v-else>{{ song.artist }}</template>
           <template v-if="song.artist && song.album"> · </template>
-          <a v-if="albumOfSong && song.album" href="#" class="rp-plink" title="Ir al disco" @click.prevent="go({ v: 'release', id: albumOfSong })">{{ song.album }}</a>
+          <a v-if="albumView && song.album" href="#" class="rp-plink" title="Ir al disco" @click.prevent="go(albumView)">{{ song.album }}</a>
           <template v-else>{{ song.album }}</template>
         </small>
       </span>
+      <button :class="['rp-pbtn', 'rp-like', { on: liked }]" :title="liked ? 'Quitar de Me gusta' : 'Me gusta'" :aria-pressed="liked" @click="toggleLike(song)">
+        <i :class="['rp-i', liked ? 'rp-i-heart-fill' : 'rp-i-heart']" aria-hidden="true"></i></button>
     </div>
     <div class="rp-pcenter">
       <div class="rp-pcontrols">
@@ -63,15 +65,22 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { fmtTime } from '../lib/library'
+import { isLiked, toggleLike } from '../lib/mine'
 import { hasNext, hasPrev, jump, next, nowPlaying as song, player, prev, removeAt, seekTo, setVolume, toggle, toggleRepeat, toggleShuffle } from '../lib/player'
-import { useStore } from '../lib/store'
+import { useStore, type View } from '../lib/store'
 import LyricsPanel from './LyricsPanel.vue'
 
-const { go } = useStore()
+const { go, server, device } = useStore()
 const showQueue = ref(false)
 const showLyrics = ref(false)
 /** Where the title leads: the album the song is on (a loose song's own row is not a page). */
 const albumOfSong = computed(() => song.value?.albumId || (song.value?.releaseId && song.value.releaseId > 0 ? song.value.releaseId : 0))
+/** Where the title and the artist lead: a song of this device to its pages here, a cloud one to the server's. */
+const albumView = computed<View | null>(() => (song.value?.device ? (device && song.value.albumKey ? { v: 'lalbum', key: song.value.albumKey } : null)
+  : server && albumOfSong.value ? { v: 'release', id: albumOfSong.value } : null))
+const artistView = computed<View | null>(() => (song.value?.device ? (device ? { v: 'lartist', name: song.value.artistName || song.value.artist } : null)
+  : server && song.value?.artistId ? { v: 'artist', id: song.value.artistId } : null))
+const liked = computed(() => isLiked(song.value))
 // ---- the progress bar: click, or press and drag (it jumps there on release, so the sound does not stutter) ----
 const dragAt = ref<number | null>(null)
 const playedFraction = computed(() => (player.duration ? Math.min(1, player.time / player.duration) : 0))

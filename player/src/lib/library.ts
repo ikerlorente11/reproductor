@@ -136,6 +136,11 @@ export interface Song {
   artistId?: number | null
   /** the Deezer song, when known (to add it to a playlist) */
   trackId?: number | null
+  /** a song of this device: its id in the device's index (it plays from there, not from the cloud) */
+  device?: string
+  /** a device song's album and album artist (where the player's title and artist lead) */
+  albumKey?: string
+  artistName?: string
 }
 
 /** The playable songs of a downloaded release, with Deezer's durations when the lists line up. */
