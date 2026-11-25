@@ -1,0 +1,500 @@
+/* El Reproductor. Colours follow OpenCloud's theme (light or dark) through its role variables;
+   the accent is the app's green. */
+.rp {
+  --rp-accent: #1fb866; --rp-accent-2: #13a05a; --rp-on-accent: #04170c;
+  --rp-surface: var(--oc-role-surface, #fff);
+  --rp-surface-2: var(--oc-role-surface-container, rgba(128,128,128,.07));
+  --rp-surface-3: var(--oc-role-surface-container-high, rgba(128,128,128,.14));
+  --rp-line: var(--oc-role-outline-variant, #e3e3e8);
+  --rp-muted: var(--oc-role-on-surface-variant, #6f6f78);
+  display: grid; grid-template-columns: 250px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "side main" "bar bar"; box-sizing: border-box;
+  color: var(--oc-role-on-surface, #1b1b1f);
+  /* On its own: over El Archivador's top bar and sidebar (it has its own way back). */
+  position: fixed; inset: 0; z-index: 60; background: var(--oc-role-background, #fff);
+}
+.rp *, .rp *::before, .rp *::after { box-sizing: border-box; }
+.rp a { color: inherit; }
+.rp-muted { color: var(--rp-muted); }
+.rp-small { font-size: 12.5px; }
+.rp-tiny { font-size: 11px; }
+.rp-grow { flex: 1; }
+.rp-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; display: block; }
+.rp-spin { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: rp-spin .8s linear infinite; vertical-align: -2px; flex: none; }
+@keyframes rp-spin { to { transform: rotate(360deg); } }
+
+/* ---- sidebar ---- */
+.rp-brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 4px; font-size: 18px; letter-spacing: -.01em; }
+.rp-brand-mark { width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--rp-accent-2); color: #fff; font-size: 18px; }
+.rp-back { display: block; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--rp-muted) !important; }
+.rp-back:hover { background: var(--rp-surface-2); color: inherit !important; }
+.rp-side { grid-area: side; display: flex; flex-direction: column; gap: 8px; padding: 12px 8px 12px 12px; min-height: 0; border-right: 1px solid var(--rp-line); }
+.rp-nav { display: grid; gap: 2px; padding: 4px; border-radius: 12px; background: var(--rp-surface-2); }
+.rp-nav a { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 9px; text-decoration: none; font-weight: 600; }
+.rp-nav a:hover { background: var(--rp-surface-3); }
+.rp-nav a.on { color: var(--rp-accent-2); background: var(--rp-surface-3); }
+.rp-ni { width: 20px; text-align: center; font-size: 17px; }
+.rp-lib { flex: 1; min-height: 0; overflow-y: auto; padding: 4px; border-radius: 12px; background: var(--rp-surface-2); scrollbar-width: thin; }
+.rp-libh { margin: 10px 8px 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--rp-muted); }
+.rp-lib > .rp-small { margin: 4px 8px 10px; line-height: 1.5; }
+.rp-artists { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.rp-artists a { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 9px; text-decoration: none; min-width: 0; }
+.rp-artists a:hover { background: var(--rp-surface-3); }
+.rp-artists a.on { background: var(--rp-surface-3); color: var(--rp-accent-2); }
+.rp-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex: none; display: inline-flex; align-items: center; justify-content: center; background: var(--rp-surface-3); }
+.rp-avatar-none { color: var(--rp-accent); }
+.rp-avatar-folder { border-radius: 8px; color: var(--rp-accent); font-size: 17px; }
+.rp-aname { display: grid; min-width: 0; line-height: 1.25; }
+.rp-aname small { font-size: 11.5px; }
+
+/* ---- main ---- */
+.rp-main { grid-area: main; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(128,128,128,.35) transparent; }
+.rp-page { padding: 18px 24px 40px; display: grid; gap: 16px; align-content: start; }
+.rp-page-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rp-h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.01em; }
+.rp-h1.rp-big { font-size: clamp(26px, 4vw, 46px); line-height: 1.08; overflow-wrap: anywhere; }
+.rp-h2 { margin: 0 0 10px; font-size: 18px; font-weight: 750; }
+.rp-h2 small { font-size: 13px; font-weight: 500; margin-left: 4px; }
+.rp-section { display: block; }
+.rp-banner { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--rp-surface-2); }
+.rp-banner-error { color: #c62f42; background: rgba(214,69,69,.1); }
+.rp-strip { margin: 0; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: rgba(31,184,102,.12); color: var(--rp-accent-2); font-weight: 600; }
+.rp-empty { padding: 48px 20px; text-align: center; border-radius: 16px; background: var(--rp-surface-2); display: grid; gap: 10px; justify-items: center; line-height: 1.6; }
+.rp-empty p { margin: 0; max-width: 460px; }
+.rp-empty-icon { font-size: 46px; color: var(--rp-accent); }
+
+.rp-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--rp-line); background: transparent; color: inherit; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.rp-btn:hover:not(:disabled) { background: var(--rp-surface-3); }
+.rp-btn:disabled { opacity: .5; cursor: default; }
+.rp-btn.rp-small { padding: 5px 11px; font-size: 12px; }
+.rp-btn.rp-primary { background: var(--rp-accent); border-color: transparent; color: var(--rp-on-accent); font-weight: 750; }
+.rp-btn.rp-primary:hover:not(:disabled) { background: var(--rp-accent); filter: brightness(1.08); transform: scale(1.02); }
+.rp-btn.rp-danger:hover:not(:disabled) { color: #c62f42; border-color: #c62f42; }
+.rp-round-btn { width: 48px; height: 48px; padding: 0 !important; justify-content: center; font-size: 17px; }
+.rp-mini { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--rp-line); background: transparent; color: inherit; cursor: pointer; font-size: 10px; flex: none; padding: 0; }
+.rp-mini:hover { background: var(--rp-accent); color: var(--rp-on-accent); border-color: transparent; }
+.rp-search { flex: 1 1 320px; max-width: 520px; padding: 11px 18px; border-radius: 999px; border: 1px solid var(--rp-line); background: var(--rp-surface-2);
+  color: inherit; font: inherit; font-size: 15px; }
+.rp-search:focus { outline: 2px solid var(--rp-accent); outline-offset: 1px; }
+.rp-search.rp-search-small { flex: 0 1 200px; padding: 7px 14px; font-size: 13px; }
+.rp-input { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--rp-line); background: var(--rp-surface); color: inherit; font: inherit; }
+
+/* Centred in the rows of buttons it sits in; inside a card's text, at the start of its line. */
+.rp-badge { display: inline-flex; align-items: center; align-self: center; flex: none; line-height: 1.5; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  background: var(--rp-surface-3); color: var(--rp-muted); white-space: nowrap; }
+.rp-badge-done { background: rgba(31,184,102,.16); color: var(--rp-accent-2); }
+.rp-badge-downloading, .rp-badge-wanted, .rp-badge-preview-wanted { background: rgba(80,120,230,.15); color: #4a6fd6; }
+.rp-badge-failed { background: rgba(214,69,69,.14); color: #c62f42; }
+
+/* ---- cards ---- */
+.rp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; }
+.rp-card { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; padding: 10px; border-radius: 14px; background: var(--rp-surface-2); min-width: 0; transition: background .15s; }
+.rp-card:hover { background: var(--rp-surface-3); }
+.rp-card-link .rp-cover, .rp-card-link .rp-card-text { cursor: pointer; }
+.rp-cover { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: var(--rp-surface-3); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.rp-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rp-cover-none { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 36px; color: var(--rp-accent); background: var(--rp-surface-3); }
+.rp-cover-play { position: absolute; right: 8px; bottom: 8px; width: 42px; height: 42px; border-radius: 50%; border: 0; background: var(--rp-accent);
+  color: var(--rp-on-accent); font-size: 15px; cursor: pointer; opacity: 0; transform: translateY(6px); transition: all .15s; box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+.rp-card:hover .rp-cover-play, .rp-cover-play:focus { opacity: 1; transform: none; }
+.rp-card-text { display: grid; gap: 3px; min-width: 0; align-content: start; }
+.rp-card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.rp-st-skipped .rp-cover, .rp-st-preview-skipped .rp-cover { opacity: .45; filter: grayscale(.7); }
+.rp-st-downloading .rp-cover::after { content: ''; position: absolute; inset: auto 0 0 0; height: 4px; background: linear-gradient(90deg, transparent, var(--rp-accent), transparent);
+  background-size: 50% 100%; background-repeat: no-repeat; animation: rp-load 1.4s linear infinite; }
+@keyframes rp-load { from { background-position: -50% 0; } to { background-position: 150% 0; } }
+.rp-grid-artists { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.rp-artist-card { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 12px; border-radius: 14px; background: var(--rp-surface-2); text-decoration: none; min-width: 0; }
+.rp-artist-card:hover { background: var(--rp-surface-3); }
+.rp-artist-card img, .rp-artist-card .rp-artist-none { width: 100%; aspect-ratio: 1; border-radius: 50%; object-fit: cover; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.rp-artist-card strong { width: 100%; }
+.rp-artist-none { display: flex; align-items: center; justify-content: center; background: var(--rp-surface-3); color: var(--rp-accent); font-size: 30px; }
+
+/* ---- search results ---- */
+.rp-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-width: 760px; }
+.rp-results li { display: flex; align-items: center; gap: 12px; padding: 6px 10px 6px 6px; border-radius: 12px; }
+.rp-results li:hover { background: var(--rp-surface-2); }
+.rp-result { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.rp-result-pic { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none; }
+.rp-result-text { display: grid; min-width: 0; gap: 2px; }
+
+/* ---- hero (artist, release) ---- */
+.rp-hero { display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap; padding: 8px 0 4px; }
+.rp-hero-pic { width: clamp(130px, 18vw, 210px); aspect-ratio: 1; object-fit: cover; border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.28); flex: none;
+  display: flex; align-items: center; justify-content: center; font-size: 50px; }
+.rp-round { border-radius: 50%; }
+.rp-hero-text { display: grid; gap: 6px; min-width: 0; flex: 1 1 300px; }
+.rp-hero-text a { text-decoration: none; }
+.rp-hero-text a:hover { text-decoration: underline; }
+.rp-hero-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+
+.rp-rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px 20px; padding: 16px; border-radius: 14px; background: var(--rp-surface-2); }
+.rp-fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; align-content: start; }
+.rp-fieldset legend { font-weight: 750; margin-bottom: 6px; }
+.rp-radio { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; line-height: 1.35; }
+.rp-radio input { margin-top: 3px; accent-color: var(--rp-accent); }
+.rp-inline { display: flex; align-items: center; gap: 8px; margin-left: 24px; }
+.rp-year { width: 90px; }
+.rp-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.rp-chip { display: inline-flex; align-items: center; line-height: 1.3; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--rp-line); cursor: pointer; font-size: 13px; user-select: none; }
+.rp-chip input { display: none; }
+.rp-chip.on { background: rgba(31,184,102,.16); border-color: var(--rp-accent); color: var(--rp-accent-2); font-weight: 650; }
+.rp-rules-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ---- track lists ---- */
+.rp-tracks { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.rp-tracks li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 5px 10px 5px 4px; border-radius: 9px; min-height: 46px; }
+.rp-tracks li:hover { background: var(--rp-surface-2); }
+.rp-tracks li.on { color: var(--rp-accent-2); }
+/* Dimmed: songs not here (on the text only: opacity on the row would trap its menu under the next row). */
+.rp-tracks li.off .rp-tinfo, .rp-tracks li.off .rp-tnum, .rp-tracks li.off .rp-tdur { opacity: .5; }
+/* A row or card with its "Añadir a lista" menu open stays above its neighbours. */
+.rp-tracks li:has(.rp-menu), .rp-card:has(.rp-menu), .rp-results li:has(.rp-menu), .rp-hero:has(.rp-menu) { position: relative; z-index: 35; }
+.rp-tplay { width: 36px; height: 36px; border: 0; background: transparent; color: inherit; cursor: pointer; border-radius: 50%; padding: 0; text-align: center; font-size: 13px; }
+.rp-tplay .rp-ticon { display: none; }
+.rp-tracks li:hover .rp-tplay .rp-tnum, .rp-tracks li.on .rp-tplay .rp-tnum { display: none; }
+.rp-tracks li:hover .rp-tplay .rp-ticon, .rp-tracks li.on .rp-tplay .rp-ticon { display: inline; }
+.rp-tnum { color: var(--rp-muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+.rp-tinfo { display: grid; min-width: 0; }
+.rp-tinfo small { font-size: 12px; }
+.rp-tdur { font-variant-numeric: tabular-nums; }
+
+/* ---- folders ---- */
+.rp-crumbs { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.rp-crumbs a { text-decoration: none; color: var(--rp-muted); }
+.rp-crumbs a:hover { text-decoration: underline; }
+.rp-folder-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.rp-folder-grid li { display: flex; align-items: center; gap: 6px; }
+.rp-folder { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; text-decoration: none; background: var(--rp-surface-2); }
+.rp-folder:hover { background: var(--rp-surface-3); }
+
+/* ---- player ---- */
+.rp-bar { grid-area: bar; }
+.rp-player { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: center;
+  padding: 10px 18px; border-top: 1px solid var(--rp-line); background: var(--rp-surface-2); }
+.rp-pinfo { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rp-pcover { width: 54px; height: 54px; border-radius: 8px; object-fit: cover; flex: none; font-size: 22px; }
+.rp-pinfo-text { display: grid; min-width: 0; gap: 2px; }
+.rp-plink { text-decoration: none; }
+.rp-plink:hover { text-decoration: underline; }
+.rp-pcenter { display: grid; gap: 6px; justify-items: center; min-width: 0; }
+.rp-pcontrols { display: flex; align-items: center; gap: 10px; }
+.rp-pbtn { width: 32px; height: 32px; border-radius: 50%; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center; opacity: .8; }
+.rp-pbtn:hover:not(:disabled) { opacity: 1; background: var(--rp-surface-3); }
+.rp-pbtn.on { color: var(--rp-accent-2); opacity: 1; }
+.rp-pbtn:disabled { opacity: .3; cursor: default; }
+.rp-pbtn.rp-pmain { width: 40px; height: 40px; background: var(--oc-role-on-surface, #1b1b1f); color: var(--rp-surface); opacity: 1; font-size: 13px; }
+.rp-pbtn.rp-pmain:hover:not(:disabled) { transform: scale(1.06); background: var(--oc-role-on-surface, #1b1b1f); }
+.rp-pprogress { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 620px; }
+.rp-ptime { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--rp-muted); min-width: 34px; text-align: center; }
+/* A tall grip around a thin line, a knob on hover or while dragging. */
+.rp-pbarline { position: relative; flex: 1; height: 16px; display: flex; align-items: center; cursor: pointer; touch-action: none; }
+.rp-pbarline:focus-visible { outline: 2px solid var(--rp-accent); outline-offset: 2px; border-radius: 4px; }
+.rp-pbartrack { flex: 1; height: 5px; border-radius: 3px; background: var(--rp-surface-3); overflow: hidden; }
+.rp-pbartrack i { display: block; height: 100%; background: var(--oc-role-on-surface, #1b1b1f); border-radius: 3px; }
+.rp-pbarline:hover .rp-pbartrack i, .rp-pbarline.dragging .rp-pbartrack i { background: var(--rp-accent); }
+.rp-pbarknob { position: absolute; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%;
+  background: var(--oc-role-on-surface, #1b1b1f); box-shadow: 0 1px 3px rgba(0,0,0,.3); opacity: 0; transition: opacity .12s; pointer-events: none; }
+.rp-pbarline:hover .rp-pbarknob, .rp-pbarline.dragging .rp-pbarknob, .rp-pbarline:focus-visible .rp-pbarknob { opacity: 1; }
+@media (hover: none) { .rp-pbarknob { opacity: 1; } }
+.rp-pright { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.rp-vol { width: 110px; accent-color: var(--rp-accent); }
+.rp-perror { grid-column: 1 / -1; margin: 0; color: #c62f42; font-size: 12px; }
+.rp-queue { position: absolute; right: 12px; bottom: calc(100% + 8px); width: min(380px, calc(100vw - 24px)); max-height: 60vh; overflow-y: auto; z-index: 20;
+  border-radius: 14px; background: var(--rp-surface); border: 1px solid var(--rp-line); box-shadow: 0 18px 50px rgba(0,0,0,.3); padding: 8px; }
+.rp-queue-head { display: flex; align-items: center; gap: 8px; padding: 4px 6px 8px; }
+.rp-queue ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.rp-queue li { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; gap: 8px; align-items: center; padding: 4px 6px; border-radius: 9px; }
+.rp-queue li:hover { background: var(--rp-surface-2); }
+.rp-queue li.on { color: var(--rp-accent-2); background: var(--rp-surface-2); }
+.rp-queue li.past { opacity: .55; }
+
+.rp-modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+.rp-dialog { background: var(--rp-surface); color: inherit; border-radius: 16px; padding: 18px 20px; max-width: 480px; width: 100%; display: grid; gap: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.rp-dialog p { margin: 0; line-height: 1.5; }
+.rp-toast { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 30; padding: 10px 16px; border-radius: 10px; max-width: min(560px, 90%);
+  background: var(--oc-role-on-surface, #1b1b1f); color: var(--rp-surface); font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.rp-toast-error { background: #c62f42; color: #fff; }
+
+/* ---- narrow screens: the library goes on top, the player stacks ---- */
+@media (max-width: 760px) {
+  .rp { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "side" "main" "bar"; }
+  .rp-side { border-right: 0; border-bottom: 1px solid var(--rp-line); padding: 8px; }
+  .rp-brand, .rp-back { display: none; }
+  .rp-nav { grid-auto-flow: column; }
+  .rp-lib { max-height: 120px; }
+  .rp-page { padding: 14px 14px 30px; }
+  .rp-player { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 8px 12px; }
+  .rp-pcenter { grid-column: 1 / -1; grid-row: 2; }
+  .rp-pright .rp-vol, .rp-pright .rp-muted { display: none; }
+}
+
+/* ---- playlists ---- */
+.rp-libh-row { display: flex; align-items: center; justify-content: space-between; }
+.rp-libh-row .rp-mini { width: 24px; height: 24px; font-size: 13px; }
+.rp-newlist { padding: 2px 6px 6px; }
+.rp-newlist .rp-input { width: 100%; }
+.rp-add { position: relative; display: inline-flex; }
+.rp-add-mini { font-size: 13px; }
+.rp-menu { position: absolute; z-index: 40; top: calc(100% + 6px); right: 0; width: 260px; max-height: 340px; overflow-y: auto; padding: 6px;
+  border-radius: 12px; background: var(--rp-surface); border: 1px solid var(--rp-line); box-shadow: 0 16px 40px rgba(0,0,0,.28); display: grid; gap: 2px; }
+.rp-menu-head { margin: 4px 8px 4px; }
+.rp-menu-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: inherit;
+  cursor: pointer; font: inherit; font-size: 13px; text-align: left; min-width: 0; }
+.rp-menu-item:hover:not(:disabled) { background: var(--rp-surface-2); }
+.rp-menu-new { display: flex; gap: 6px; padding: 6px 4px 2px; border-top: 1px solid var(--rp-line); margin-top: 4px; }
+.rp-menu-new .rp-input { flex: 1; min-width: 0; font-size: 13px; }
+.rp-menu-check { display: flex; gap: 6px; align-items: flex-start; padding: 6px 8px; font-size: 12px; line-height: 1.35; }
+.rp-menu-check input { accent-color: var(--rp-accent); margin-top: 2px; }
+.rp-menu-hint { margin: 2px 8px 4px; line-height: 1.35; }
+.rp-mosaic { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; background: var(--rp-surface-3); }
+.rp-mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rp-mosaic .rp-mosaic-one { grid-column: 1 / -1; grid-row: 1 / span 2; }
+.rp-mosaic .rp-cover-none { grid-column: 1 / -1; font-size: 50px; }
+.rp-rename { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rp-rename-input { font-size: 24px; font-weight: 800; padding: 6px 12px; min-width: 0; flex: 1 1 260px; }
+.rp-entries { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rp-entries li { display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 10px; background: var(--rp-surface-2); }
+.rp-entry-pic { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex: none; font-size: 18px; }
+.rp-entry-text { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.rp-entry-text a { text-decoration: none; }
+.rp-entry-text a:hover { text-decoration: underline; }
+.rp-entry-new { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; white-space: nowrap; cursor: pointer; }
+.rp-entry-new input { accent-color: var(--rp-accent); }
+.rp-entry-actions { display: inline-flex; gap: 4px; }
+.rp-tright { display: inline-flex; align-items: center; gap: 8px; }
+.rp-tracks li .rp-hover { opacity: 0; transition: opacity .12s; }
+.rp-tracks li:hover .rp-hover, .rp-tracks li .rp-hover:focus-within, .rp-tracks li .rp-hover:focus { opacity: 1; }
+.rp-excluded summary { cursor: pointer; }
+.rp-excluded ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; max-width: 640px; }
+.rp-excluded li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 8px; border-radius: 8px; background: var(--rp-surface-2); }
+.rp-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.rp-tabs .rp-chip { background: transparent; color: inherit; font: inherit; font-size: 13px; }
+.rp-square { border-radius: 6px; }
+.rp-result-small { width: 46px; height: 46px; }
+.rp-results .rp-tdur { min-width: 40px; text-align: right; }
+@media (hover: none) { .rp-tracks li .rp-hover { opacity: 1; } }
+.rp-tright .rp-mini, .rp-entry-actions .rp-mini { font-size: 13px; }
+
+.rp-card-text .rp-badge { justify-self: start; align-self: start; }
+
+/* ---- downloads ---- */
+.rp-nav a { position: relative; }
+.rp-count { margin-left: auto; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--rp-accent); color: var(--rp-on-accent);
+  font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.rp-count-bad { background: #c62f42; color: #fff; }
+a.rp-strip { text-decoration: none; }
+a.rp-strip:hover { filter: brightness(.97); }
+.rp-dl { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-width: 900px; }
+.rp-dl li { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 10px; background: var(--rp-surface-2); }
+.rp-dl-main { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.rp-dl-main a { text-decoration: none; }
+.rp-dl-main a:hover { text-decoration: underline; }
+.rp-dl-bar { height: 5px; border-radius: 3px; background: var(--rp-surface-3); overflow: hidden; margin-top: 3px; }
+.rp-dl-bar i { display: block; height: 100%; background: var(--rp-accent); border-radius: 3px; transition: width .6s ease; }
+.rp-dl-state { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--rp-accent-2); font-weight: 650; white-space: nowrap; }
+.rp-avatar-square { border-radius: 6px; font-size: 15px; color: var(--rp-accent); }
+
+/* ---- foldable library groups ---- */
+.rp-libh-row { margin: 6px 4px 2px; }
+.rp-group { flex: 1; display: flex; align-items: center; gap: 6px; padding: 6px 4px; border: 0; background: transparent; color: var(--rp-muted);
+  font: inherit; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; cursor: pointer; border-radius: 8px; text-align: left; }
+.rp-group:hover { color: var(--oc-role-on-surface, #1b1b1f); background: var(--rp-surface-3); }
+.rp-group small { font-weight: 600; letter-spacing: 0; text-transform: none; }
+.rp-chev { display: inline-block; width: 12px; font-size: 15px; line-height: 1; transition: transform .15s; }
+.rp-chev.open { transform: rotate(90deg); }
+
+/* ---- icons: OpenCloud's own set (Remix Icon, served from /icons), in the colour of the text ---- */
+.rp-i { display: inline-block; flex: none; width: 1.15em; height: 1.15em; vertical-align: -.2em; background-color: currentColor;
+  -webkit-mask: var(--rp-i) center / contain no-repeat; mask: var(--rp-i) center / contain no-repeat; }
+.rp-i-home { --rp-i: url('/icons/home-5-line.svg'); }
+.rp-i-search { --rp-i: url('/icons/search-line.svg'); }
+.rp-i-download { --rp-i: url('/icons/download-2-line.svg'); }
+.rp-i-chev { --rp-i: url('/icons/arrow-right-s-line.svg'); }
+.rp-i-add { --rp-i: url('/icons/add-line.svg'); }
+.rp-i-artist { --rp-i: url('/icons/user-3-line.svg'); }
+.rp-i-playlist { --rp-i: url('/icons/play-list-2-line.svg'); }
+.rp-i-folder { --rp-i: url('/icons/folder-music-line.svg'); }
+.rp-i-back { --rp-i: url('/icons/arrow-left-line.svg'); }
+.rp-i-music { --rp-i: url('/icons/music-2-line.svg'); }
+.rp-i-delete { --rp-i: url('/icons/delete-bin-line.svg'); }
+.rp-i-bell { --rp-i: url('/icons/notification-3-line.svg'); }
+.rp-i-album { --rp-i: url('/icons/album-line.svg'); }
+.rp-i-play { --rp-i: url('/icons/play-fill.svg'); }
+.rp-i-pause { --rp-i: url('/icons/pause-fill.svg'); }
+.rp-i-shuffle { --rp-i: url('/icons/shuffle-line.svg'); }
+.rp-i-repeat { --rp-i: url('/icons/repeat-line.svg'); }
+.rp-i-prev { --rp-i: url('/icons/skip-back-fill.svg'); }
+.rp-i-next { --rp-i: url('/icons/skip-forward-fill.svg'); }
+.rp-i-queue { --rp-i: url('/icons/play-list-line.svg'); }
+.rp-i-lyrics { --rp-i: url('/icons/chat-quote-line.svg'); }
+.rp-i-volume { --rp-i: url('/icons/volume-up-line.svg'); }
+.rp-i-close { --rp-i: url('/icons/close-line.svg'); }
+.rp-i-refresh { --rp-i: url('/icons/refresh-line.svg'); }
+.rp-i-up { --rp-i: url('/icons/arrow-up-s-line.svg'); }
+.rp-i-down { --rp-i: url('/icons/arrow-down-s-line.svg'); }
+.rp-mini .rp-i { width: 15px; height: 15px; vertical-align: middle; }
+.rp-pbtn .rp-i { width: 18px; height: 18px; }
+.rp-pbtn.rp-pmain .rp-i, .rp-round-btn .rp-i { width: 20px; height: 20px; }
+.rp-cover-play .rp-i { width: 18px; height: 18px; vertical-align: middle; }
+.rp-tplay .rp-i { width: 16px; height: 16px; vertical-align: middle; }
+.rp-ni .rp-i { width: 19px; height: 19px; vertical-align: middle; }
+.rp-chev .rp-i { width: 16px; height: 16px; vertical-align: middle; }
+.rp-btn .rp-i { width: 16px; height: 16px; }
+.rp-chev { width: 16px; }
+
+/* ---- an artist's releases in a playlist ---- */
+.rp-entries li { flex-wrap: wrap; }
+.rp-entry-releases { flex-basis: 100%; padding: 6px 4px 4px 56px; }
+.rp-entry-releases p { margin: 0 0 6px; }
+.rp-entry-releases ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.rp-check { display: flex; align-items: center; gap: 10px; padding: 4px 6px; border-radius: 8px; cursor: pointer; min-width: 0; }
+.rp-check:hover { background: var(--rp-surface-3); }
+.rp-check input { accent-color: var(--rp-accent); flex: none; }
+.rp-check img { width: 30px; height: 30px; border-radius: 4px; object-fit: cover; flex: none; }
+.rp-check small { margin-left: auto; white-space: nowrap; }
+
+/* ---- what of an artist or a release goes into a playlist ---- */
+.rp-menu.rp-menu-wide { width: min(340px, calc(100vw - 32px)); max-height: 420px; display: flex; flex-direction: column; overflow: hidden; }
+.rp-menu-choices { list-style: none; margin: 0; padding: 0 2px; display: grid; gap: 1px; overflow-y: auto; min-height: 0; }
+.rp-menu-choices .rp-check { font-size: 13px; padding: 5px 6px; }
+.rp-menu-choices .rp-check img { width: 26px; height: 26px; }
+.rp-menu-actions { display: flex; justify-content: flex-end; gap: 6px; padding: 8px 4px 2px; border-top: 1px solid var(--rp-line); margin-top: 6px; }
+
+/* ---- the hero's status pill, as tall as the buttons beside it ---- */
+.rp-badge.rp-badge-big { padding: 8px 14px; font-size: 13px; font-weight: 600; line-height: normal; border: 1px solid transparent; }
+
+/* ---- placeholders while loading ---- */
+.rp-skel { display: block; border-radius: 8px; background: var(--rp-surface-3); animation: rp-pulse 1.4s ease-in-out infinite; box-shadow: none; }
+.rp-skel-line { height: 12px; width: 80%; }
+.rp-skel-title { height: clamp(28px, 4vw, 46px); width: min(340px, 70%); border-radius: 10px; }
+.rp-skel-btn { width: 110px; height: 36px; border-radius: 999px; }
+.rp-skel-badge { width: 78px; height: 18px; border-radius: 999px; }
+.rp-artist-skel { display: grid; gap: 22px; }
+.rp-artist-skel .rp-card { gap: 10px; }
+@keyframes rp-pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .rp-skel { animation: none; } }
+
+/* ---- deleting ---- */
+.rp-btn.rp-danger-solid { background: #c4314b; border-color: transparent; color: #fff; }
+.rp-btn.rp-danger-solid:hover:not(:disabled) { background: #b02a42; }
+.rp-mini.rp-mini-danger:hover { background: #c4314b; color: #fff; }
+
+/* ---- soundlift: progress and songs to decide on ---- */
+.rp-count.rp-count-alert { display: inline-flex; align-items: center; gap: 3px; background: rgba(214,69,69,.14); color: #c62f42; }
+.rp-count-alert .rp-i { width: 12px; height: 12px; }
+.rp-sl-intro { margin: -6px 0 0; max-width: 720px; }
+.rp-sl-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.rp-sl-head .rp-h2 { margin: 0; }
+.rp-sl-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; max-width: 900px; }
+.rp-sl-item { padding: 12px 14px; border-radius: 12px; background: var(--rp-surface-2); display: grid; gap: 6px; }
+.rp-sl-item p { margin: 0; }
+.rp-sl-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rp-sl-main { display: grid; min-width: 0; flex: 1; }
+.rp-sl-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.rp-sl-bad { color: #c62f42; }
+.rp-sl-cands { list-style: none; margin: 4px 0 0; padding: 8px 0 0; border-top: 1px solid var(--rp-line); display: grid; gap: 4px; }
+.rp-sl-cands li { display: flex; align-items: center; gap: 10px; padding: 4px 2px; min-width: 0; }
+.rp-sl-weak .rp-sl-main { opacity: .65; }
+
+/* ---- choosing several songs or releases ---- */
+.rp-tracks-tools { display: flex; justify-content: flex-end; margin: -4px 0 6px; }
+.rp-tracks.rp-selecting li { cursor: pointer; user-select: none; }
+.rp-tracks.rp-selecting li.off { cursor: default; }
+.rp-tracks li.sel { background: var(--rp-surface-2); }
+.rp-tcheck { display: inline-flex; align-items: center; justify-content: center; }
+.rp-tcheck input, .rp-card-check input { width: 16px; height: 16px; accent-color: var(--rp-accent); cursor: pointer; margin: 0; }
+.rp-card-check { position: absolute; top: 8px; left: 8px; z-index: 2; width: 26px; height: 26px; border-radius: 7px; display: inline-flex;
+  align-items: center; justify-content: center; background: var(--rp-surface); }
+.rp-card-sel { outline: 2px solid var(--rp-accent); outline-offset: -2px; }
+.rp-selbar { position: sticky; bottom: 12px; z-index: 30; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+  padding: 10px 14px; border-radius: 12px; background: var(--rp-surface); border: 1px solid var(--rp-line); box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.rp-selbar-gap { flex: 1; }
+.rp-selbar-count { font-size: 13px; }
+.rp-card-off { opacity: .45; }
+
+/* ---- the sidebar's filter ---- */
+.rp-libfilter { position: sticky; top: -4px; z-index: 2; display: flex; align-items: center; margin: -4px -4px 8px; padding: 6px 8px; background: var(--rp-surface-2); border-radius: 12px 12px 0 0; }
+.rp-libfilter > .rp-i-search { position: absolute; left: 10px; width: 14px; height: 14px; opacity: .55; pointer-events: none; }
+.rp-libfilter-input { width: 100%; min-width: 0; padding: 7px 30px 7px 31px; border-radius: 8px; border: 1px solid var(--rp-line);
+  background: var(--rp-surface-2); color: inherit; font: inherit; font-size: 13px; }
+.rp-libfilter-input:focus { outline: 2px solid var(--rp-accent); outline-offset: 0; }
+.rp-libfilter-input::-webkit-search-cancel-button { display: none; }
+.rp-libfilter-clear { position: absolute; right: 4px; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: inherit;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; opacity: .6; }
+.rp-libfilter-clear:hover { opacity: 1; background: var(--rp-surface-3); }
+.rp-libfilter-clear .rp-i { width: 12px; height: 12px; }
+.rp-libnone { margin: 4px 8px; }
+
+/* ---- songs to place ---- */
+.rp-sl-find { display: grid; gap: 6px; padding-top: 6px; border-top: 1px solid var(--rp-line); }
+.rp-sl-search { display: flex; gap: 6px; }
+.rp-sl-search .rp-input { flex: 1; min-width: 0; font-size: 13px; }
+.rp-sl-find .rp-sl-cands { border-top: 0; padding-top: 0; }
+.rp-sl-cover { width: 34px; height: 34px; border-radius: 5px; object-fit: cover; flex: none; }
+.rp-sl-cands a.rp-btn { text-decoration: none; }
+@media (max-width: 640px) { .rp-sl-cands li { flex-wrap: wrap; } }
+
+/* ---- search «Todo»: a heading per kind; an artist's «Canciones» ---- */
+.rp-h2.rp-search-sec { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 8px 0 -6px; }
+.rp-h2.rp-search-sec a { font-weight: 500; text-decoration: none; }
+.rp-h2.rp-search-sec a:hover { text-decoration: underline; }
+.rp-songs-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.rp-songs-tools label { display: inline-flex; align-items: center; gap: 6px; }
+.rp-tdate { min-width: 84px; text-align: right; white-space: nowrap; }
+@media (max-width: 640px) { .rp-tdate { display: none; } }
+/* ---- lyrics, over the main area like the queue; the sung line lit and kept in view ---- */
+.rp-lyrics { position: absolute; right: 12px; bottom: calc(100% + 8px); width: min(520px, calc(100vw - 24px)); height: min(62vh, 560px); z-index: 20;
+  display: flex; flex-direction: column; border-radius: 14px; background: var(--rp-surface); border: 1px solid var(--rp-line);
+  box-shadow: 0 18px 50px rgba(0,0,0,.3); padding: 8px; }
+.rp-lyrics-head { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  padding: 4px 4px 10px; margin-bottom: 2px; border-bottom: 1px solid var(--rp-line); }
+.rp-lyrics-cover { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--rp-surface-3); box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+.rp-lyrics-title { display: grid; min-width: 0; gap: 1px; line-height: 1.25; }
+.rp-lyrics-title strong { font-size: 15px; }
+.rp-lyrics-title small { font-size: 12px; }
+.rp-lyrics-kicker { font-size: 10.5px !important; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rp-accent-2); }
+.rp-lyrics-cover.rp-cover-none { font-size: 20px; }
+.rp-lyrics-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 30% 8%; text-align: center;
+  scrollbar-width: none; -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent); }
+.rp-lyrics-body::-webkit-scrollbar { display: none; }
+.rp-lyrics-body > p:first-child { margin-top: 0; }
+.rp-lyrics-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+/* The sung line grows a little and lights up; the others step back. transform keeps the layout still while it animates. */
+.rp-lyrics-lines li { font-size: 20px; font-weight: 700; line-height: 1.35; padding: 4px 10px; border-radius: 10px; cursor: pointer;
+  opacity: .35; transform: scale(1); transform-origin: center; overflow-wrap: anywhere;
+  transition: transform .45s cubic-bezier(.2, .9, .3, 1.25), opacity .35s ease, color .35s ease, filter .35s ease; filter: blur(.3px); }
+.rp-lyrics-lines li:hover { opacity: .75; filter: none; }
+.rp-lyrics-lines li.past { opacity: .5; }
+.rp-lyrics-lines li.on { opacity: 1; color: var(--rp-accent-2); transform: scale(1.14); filter: none; }
+.rp-lyrics-plain { white-space: pre-line; font-size: 17px; font-weight: 600; line-height: 1.7; margin: 0; }
+.rp-lyrics-src { margin: 4px 8px 0; text-align: center; }
+@media (max-width: 640px) { .rp-lyrics-lines li { font-size: 17px; } }
+@media (prefers-reduced-motion: reduce) { .rp-lyrics-lines li { transition: opacity .2s, color .2s; } }
+/* ---- adjusting the lyrics' sync by hand ---- */
+.rp-lyrics-actions { display: inline-flex; align-items: center; gap: 6px; }
+.rp-lyrics-adjusting .rp-lyrics-lines li { cursor: crosshair; }
+.rp-lyrics-adjust { display: grid; gap: 8px; padding: 10px 4px 2px; border-top: 1px solid var(--rp-line); }
+.rp-lyrics-adjust > p { margin: 0; text-align: center; }
+.rp-lyrics-steps { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.rp-lyrics-steps .rp-btn { min-width: 44px; justify-content: center; }
+.rp-lyrics-offset { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; color: var(--rp-accent-2); }
+/* ---- a playlist's songs still on their way ---- */
+.rp-pending-song .rp-tinfo .rp-dl-bar { margin-top: 4px; max-width: 260px; }
+/* A player toggle that is on (shuffle, repeat, lyrics, queue): green with a dot under it, as it stays on. */
+.rp-pbtn.on { position: relative; }
+.rp-pbtn.on::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; }
+/* A song on its way in a list: its badge fills up as it downloads. */
+.rp-badge-progress { position: relative; overflow: hidden; font-variant-numeric: tabular-nums; }
+.rp-badge-progress > i { position: absolute; inset: 0 auto 0 0; background: rgba(31,184,102,.28); transition: width .6s ease; }
+.rp-badge-progress > span { position: relative; }
+.rp-avatar.rp-avatar-song { border-radius: 6px; }
+.rp-plinks .rp-plink { color: inherit; text-decoration: none; }
+.rp-plinks .rp-plink:hover { text-decoration: underline; color: var(--oc-role-on-surface, inherit); }
+/* An artist's «Populares»: five songs, ten with «Ver más». */
+.rp-top .rp-top-more { margin-top: 6px; }

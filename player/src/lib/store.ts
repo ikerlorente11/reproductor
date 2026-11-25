@@ -1,0 +1,67 @@
+/** What every page of the app shares: the API, the followed artists and how to move around. */
+import { inject, reactive, type InjectionKey } from 'vue'
+import type { Api, Downloads, Follow, PlaylistSummary, Release } from './api.ts'
+import type { Song } from './library.ts'
+import type { Soundlift } from './soundlift.ts'
+import type { View } from './views.ts'
+
+export { queryFromView, viewFromQuery, type View } from './views.ts'
+
+/** Something the audio element can play, and how to give it back when the song changes. */
+export interface Playable { url: string; release?: () => void }
+
+/** What is in a folder of the music (only audio files; paths as the player uses them). */
+export interface Listing {
+  folders: { path: string; name: string }[]
+  files: { path: string; name: string; size: number }[]
+}
+
+/**
+ * The music's files, as each platform reaches them: the web through the cloud's WebDAV with its session,
+ * the apps through their own side. A missing folder or file fails with `status: 404`.
+ */
+export interface Files {
+  list(dir: string): Promise<Listing>
+  /** to the cloud's bin; a file already gone counts as removed */
+  remove(path: string): Promise<void>
+  /** a URL the audio element can play */
+  play(song: Song): Promise<Playable>
+}
+
+export interface Store {
+  api: Api
+  musicRoot: string
+  /** the cloud's name, as people know it (where deleted songs go, where soundlift delivers) */
+  cloudName: string
+  files: Files
+  state: { follows: Follow[]; playlists: PlaylistSummary[]; downloads: Downloads; albums: Release[]; loaded: boolean; connected: boolean; error: string }
+  refreshFollows: () => Promise<void>
+  refreshPlaylists: () => Promise<void>
+  refreshDownloads: () => Promise<void>
+  /** moves to a page; `replace`: without a new entry in the history (to keep a search's words, say) */
+  go: (view: View, replace?: boolean) => void
+  notify: (text: string, error?: boolean) => void
+  sl: Soundlift
+  /** Deletes songs from the cloud (to its trash bin) after asking; true when something was deleted. */
+  remove: (req: RemoveRequest) => Promise<boolean>
+}
+
+export interface RemoveRequest {
+  title: string
+  paths: (string | null | undefined)[]
+  detail?: string
+  /** an artist to stop following once their music is gone */
+  unfollow?: number
+}
+
+export const STORE: InjectionKey<Store> = Symbol('reproductor')
+
+export function createState(): Store['state'] {
+  return reactive({ follows: [], playlists: [], downloads: { active: [], waiting: 0, failed: [], recent: [] }, albums: [], loaded: false, connected: false, error: '' })
+}
+
+export function useStore(): Store {
+  const store = inject(STORE)
+  if (!store) throw new Error('El Reproductor: store not provided')
+  return store
+}
