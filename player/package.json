@@ -15,7 +15,7 @@
     "README.md"
   ],
   "scripts": {
-    "test": "node --experimental-strip-types test/library.test.ts && node --experimental-strip-types test/device.test.ts"
+    "test": "node --experimental-strip-types test/library.test.ts && node --experimental-strip-types test/device.test.ts && node --experimental-strip-types test/remote.test.ts"
   },
   "peerDependencies": {
     "vue": "^3.4.0"

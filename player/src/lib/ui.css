@@ -701,3 +701,15 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 /* ---- «Seguir escuchando» ---- */
 .rp-handoff { margin-bottom: 4px; }
 .rp-handoff .rp-mini { color: inherit; }
+
+/* ---- Ajustes › Bibliotecas ---- */
+.rp-libs { display: grid; gap: 12px; }
+.rp-libs h2 { margin: 0; font-size: 16px; }
+.rp-libs p { margin: 0; line-height: 1.5; }
+.rp-libs-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rp-libs-list li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--rp-surface); }
+.rp-libs-list li > span.rp-grow { display: grid; min-width: 0; }
+.rp-libs-form { display: grid; gap: 10px; max-width: 520px; }
+.rp-libs-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+.rp-libs-form .rp-input { padding: 8px 12px; font-size: 14px; }
+.rp-libs-actions { display: flex; gap: 8px; flex-wrap: wrap; }
