@@ -22,8 +22,9 @@ export type View =
   | { v: 'likes' }
   | { v: 'recent' }
   | { v: 'settings' }
+  | { v: 'get' }
 
-const BARE = ['downloads', 'soundlift', 'spotify', 'songs', 'albums', 'artists', 'likes', 'recent', 'settings'] as const
+const BARE = ['downloads', 'soundlift', 'spotify', 'songs', 'albums', 'artists', 'likes', 'recent', 'settings', 'get'] as const
 
 /** The view a route's query stands for (the app keeps its place in the URL). */
 export function viewFromQuery(query: Record<string, unknown>): View {

@@ -1,7 +1,7 @@
 /** soundlift as El Reproductor shows it: its downloads under way and the songs waiting for a decision.
  *  The same API as soundlift's own web, with the Authorization of the El Reproductor API (soundlift trusts the same cloud). */
 import { reactive } from 'vue'
-import type { Auth } from './api.ts'
+import type { Auth, Fetch } from './api.ts'
 
 export interface SlJob {
   id: string
@@ -49,6 +49,9 @@ export const ACTIVE = ['queued', 'resolving', 'running']
 export const soundliftState = reactive({ url: '', review: 0, active: 0, unplaced: 0 })
 
 export class Soundlift {
+  /** how requests go out (an app sets its own) */
+  fetch: Fetch = (input, init) => globalThis.fetch(input, init)
+
   /** `discover`: where to find soundlift's address when none is given (the web asks the cloud's config). */
   constructor(url: string, private auth: Auth, private discover?: () => Promise<string>) { soundliftState.url = url.replace(/\/+$/, '') }
 
@@ -62,7 +65,7 @@ export class Soundlift {
   }
 
   private async call<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const res = await fetch(this.baseUrl + path, {
+    const res = await this.fetch(this.baseUrl + path, {
       ...init,
       headers: { Authorization: this.auth(), 'Content-Type': 'application/json', ...((init.headers as any) || {}) }
     })
@@ -89,7 +92,7 @@ export class Soundlift {
   }
   /** The song as soundlift got it (its staging copy), to listen to before deciding. */
   async audio(id: string): Promise<Blob> {
-    const res = await fetch(`${this.baseUrl}/api/tracks/${id}/audio`, { headers: { Authorization: this.auth() } })
+    const res = await this.fetch(`${this.baseUrl}/api/tracks/${id}/audio`, { headers: { Authorization: this.auth() } })
     if (!res.ok) throw new Error('No se pudo cargar el audio')
     return res.blob()
   }

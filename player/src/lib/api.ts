@@ -330,6 +330,8 @@ export interface DeviceCommand { seq: number; from: string; type: string; data: 
 
 /** Gives the Authorization header of each call (it may change: a web session renews its token). */
 export type Auth = () => string
+/** How requests go out: the browser's fetch, or an app's own (Tauri's, from Rust: no CORS). */
+export type Fetch = (input: string, init?: RequestInit) => Promise<Response>
 
 export class Api {
   /** `mintAppToken`: makes an app password the service keeps to download in the background (the web mints one
@@ -337,6 +339,9 @@ export class Api {
   constructor(readonly baseUrl: string, readonly auth: Auth, private mintAppToken?: () => Promise<string>) {
     this.baseUrl = baseUrl.replace(/\/+$/, '')
   }
+
+  /** how requests go out (an app sets its own) */
+  fetch: Fetch = (input, init) => globalThis.fetch(input, init)
 
   static bearer(token: () => string): Auth { return () => `Bearer ${token()}` }
   static basic(user: string, password: string): Auth {
@@ -348,7 +353,7 @@ export class Api {
   }
 
   private async call<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const res = await fetch(this.baseUrl + path, {
+    const res = await this.fetch(this.baseUrl + path, {
       ...init,
       headers: { Authorization: this.auth(), 'Content-Type': 'application/json', ...((init.headers as any) || {}) }
     })
@@ -422,7 +427,7 @@ export class Api {
   }
   /** Leaving (the page closes): the others stop listing it at once. */
   leaveDevice(id: string) {
-    fetch(`${this.baseUrl}/api/devices/${id}`, { method: 'DELETE', keepalive: true, headers: { Authorization: this.auth() } }).catch(() => {})
+    this.fetch(`${this.baseUrl}/api/devices/${id}`, { method: 'DELETE', keepalive: true, headers: { Authorization: this.auth() } }).catch(() => {})
   }
 
   playlists() { return this.call<PlaylistSummary[]>('/api/playlists') }
@@ -459,7 +464,7 @@ export class Api {
   downloads() { return this.call<Downloads>('/api/downloads') }
   /** Deezer's 30-second sample of a song. */
   async preview(trackId: number): Promise<Blob> {
-    const res = await fetch(`${this.baseUrl}/api/songs/${trackId}/preview`, { headers: { Authorization: this.auth() } })
+    const res = await this.fetch(`${this.baseUrl}/api/songs/${trackId}/preview`, { headers: { Authorization: this.auth() } })
     if (!res.ok) throw new Error(res.status === 404 ? 'Deezer no tiene muestra de esta canción' : 'No se pudo cargar la muestra')
     return res.blob()
   }

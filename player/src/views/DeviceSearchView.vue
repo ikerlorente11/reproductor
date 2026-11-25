@@ -3,6 +3,10 @@
     <header v-if="!embedded" class="rp-page-head">
       <input ref="input" v-model="query" class="rp-search" type="search" placeholder="¿Qué quieres escuchar?" aria-label="Buscar en tu música" @input="update" />
     </header>
+    <p v-if="!embedded && engine" class="rp-strip rp-get-hint">
+      <i class="rp-i rp-i-download" aria-hidden="true"></i>
+      <span>Para buscar también artistas y discos que no tienes, y bajarlos, <a href="#" @click.prevent="go({ v: 'get' })">instala el motor de descargas</a>.</span>
+    </p>
     <p v-if="!embedded && !q" class="rp-muted">Busca por canción, artista o disco entre la música de este equipo.</p>
     <template v-else-if="q">
       <p v-if="!embedded && !artists.length && !albums.length && !tracks.length" class="rp-muted">Nada con «{{ q }}» en este equipo.</p>
@@ -38,7 +42,7 @@ import SongList from './SongList.vue'
 
 /** Search in this device's music; `embedded`: a section of the server's search, with the words it was given. */
 const props = withDefaults(defineProps<{ q?: string; embedded?: boolean }>(), { q: '', embedded: false })
-const { device, go } = useStore()
+const { device, engine, go } = useStore()
 const lib = device!.state
 const input = ref<HTMLInputElement>()
 const query = ref(props.q)

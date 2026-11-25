@@ -14,6 +14,7 @@
           <a v-if="server" href="#" :class="{ on: view.v === 'artists' }" @click.prevent="go({ v: 'artists' })"><span class="rp-ni"><i class="rp-i rp-i-computer" aria-hidden="true"></i></span> Artistas del equipo</a>
         </template>
         <a href="#" :class="{ on: view.v === 'likes' }" @click.prevent="go({ v: 'likes' })"><span class="rp-ni"><i class="rp-i rp-i-heart" aria-hidden="true"></i></span> Me gusta</a>
+        <a v-if="engine && !server" href="#" :class="{ on: view.v === 'get' }" @click.prevent="go({ v: 'get' })"><span class="rp-ni"><i class="rp-i rp-i-download" aria-hidden="true"></i></span> Descargar música</a>
         <template v-if="server">
           <a href="#" :class="{ on: view.v === 'downloads' }" @click.prevent="go({ v: 'downloads' })">
             <span class="rp-ni"><span v-if="downloading" class="rp-spin"></span><template v-else><i class="rp-i rp-i-download" aria-hidden="true"></i></template></span> Descargas
@@ -149,6 +150,7 @@
       <template v-else-if="device && view.v === 'lfolder'"><DeviceFolderView :key="view.path" :path="view.path" /></template>
       <template v-else-if="view.v === 'likes' || view.v === 'recent'"><MyListView :key="view.v" :kind="view.v" /></template>
       <template v-else-if="view.v === 'llist'"><MyListView :key="view.id" kind="list" :id="view.id" /></template>
+      <DeviceDownloadView v-else-if="engine && view.v === 'get'" />
       <slot v-else-if="view.v === 'settings'" name="settings" />
       <p v-else class="rp-muted">{{ server ? 'Esta página es de la música de un equipo.' : 'Para esta página hace falta conectar un servidor de El Reproductor (en Ajustes).' }}</p>
     </main>
@@ -177,6 +179,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, watch } from 'vue'
 import type { Api } from '../lib/api'
 import type { DeviceLibrary } from '../lib/device'
+import type { LocalEngine } from '../lib/engine'
 import { createList, mine } from '../lib/mine'
 import { Soundlift, soundliftState } from '../lib/soundlift'
 import { isAudioName, isBusy, libraryArtists, releaseSongs, type Song } from '../lib/library'
@@ -202,6 +205,7 @@ import DeviceFolderView from './DeviceFolderView.vue'
 import DeviceHomeView from './DeviceHomeView.vue'
 import DeviceSearchView from './DeviceSearchView.vue'
 import MyListView from './MyListView.vue'
+import DeviceDownloadView from './DeviceDownloadView.vue'
 
 /**
  * El Reproductor: the artists you follow and their music, always up to date in your cloud.
@@ -221,6 +225,8 @@ const props = defineProps<{
   sl?: Soundlift
   files: Files
   device?: DeviceLibrary | null
+  /** an app's own download engine (without a server it downloads music to the device) */
+  engine?: LocalEngine | null
   view: View
   navigate: (view: View, replace?: boolean) => void
   musicRoot?: string
@@ -230,6 +236,8 @@ const props = defineProps<{
   playFile?: string
   /** this device among the user's (connected to a server): pass the playback to another, bring it, control it */
   me?: Me
+  /** one device per browser, not per tab (the web): a tab takes it over with the browser's lock */
+  oneTab?: boolean
 }>()
 
 const server = !!props.api
@@ -237,6 +245,7 @@ const api = props.api as Api
 const sl = props.sl || new Soundlift('', () => '')
 const files = props.files
 const device = props.device || null
+const engine = props.engine || null
 const musicRoot = props.musicRoot || 'Música'
 const cloudName = props.cloudName || 'tu nube'
 const rootPath = `/${musicRoot}`
@@ -388,7 +397,7 @@ async function connect() {
   try {
     await api.ensureConnected()
     state.connected = true
-    if (props.me) startConnect(api, props.me, notify)
+    if (props.me) startConnect(api, props.me, notify, !!props.oneTab)
   } catch (err: any) {
     state.error = `No se pudo conectar El Reproductor con tu nube: ${err?.message || err}`
     return
@@ -460,7 +469,7 @@ async function pruneFolders(paths: string[]) {
   }
 }
 
-provide(STORE, { api, server, device, musicRoot, cloudName, files, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
+provide(STORE, { api, server, device, engine, musicRoot, cloudName, files, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
 
 // ---- folders of the music root (the music that is not by followed artist yet) ----
 const folders = ref<{ path: string; name: string }[]>([])

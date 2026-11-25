@@ -689,3 +689,6 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 .rp-pconnect { grid-column: 1 / -1; order: 10; margin: -4px -18px -10px; padding: 4px 18px; font-size: 12px; font-weight: 650;
   background: var(--rp-accent); color: var(--rp-on-accent); display: flex; align-items: center; gap: 6px; }
 .rp-pconnect .rp-i { width: 14px; height: 14px; }
+
+/* ---- the download engine of an app (installing it) ---- */
+.rp-engine-bar { width: min(420px, 80%); }
