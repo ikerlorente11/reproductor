@@ -117,7 +117,9 @@ async function playAt(i: number): Promise<boolean> {
     return mine === seq
   } catch (err: any) {
     // a browser tab never touched may not make sound by itself (autoplay): say what to do
+    const status = err?.statusCode ?? err?.status ?? err?.response?.status
     const why = err?.name === 'NotAllowedError' ? 'el navegador no deja sonar una pestaña que no has tocado: pulsa ▶ en ella'
+      : status === 404 || /not found/i.test(String(err?.message)) ? 'la canción ya no está en tu nube'
       : err?.message || String(err)
     if (mine === seq) state.error = `No se pudo reproducir «${song.title}»: ${why}`
     return false
