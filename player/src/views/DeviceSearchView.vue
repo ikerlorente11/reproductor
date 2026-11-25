@@ -38,6 +38,7 @@ import { computed, onMounted, ref } from 'vue'
 import { matchesName, searchTracks } from '../lib/device'
 import { useStore } from '../lib/store'
 import DeviceAlbumCard from './DeviceAlbumCard.vue'
+import { isPhone } from '../lib/phone'
 import SongList from './SongList.vue'
 
 /** Search in this device's music; `embedded`: a section of the server's search, with the words it was given. */
@@ -56,5 +57,5 @@ const artists = computed(() => (lib.tracks, device!.artists.filter((a) => matche
 const albums = computed(() => (lib.tracks, device!.albums.filter((a) => matchesName(`${a.title} ${a.artist}`, q.value))))
 const tracks = computed(() => searchTracks(lib.tracks, q.value))
 const songs = computed(() => device!.songs(tracks.value.slice(0, props.embedded ? 10 : 100)))
-onMounted(() => { if (!props.embedded) input.value?.focus() })
+onMounted(() => { if (!props.embedded && !isPhone.value) input.value?.focus() })
 </script>

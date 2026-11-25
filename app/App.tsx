@@ -62,6 +62,8 @@ export default function App() {
   const system = useColorScheme()
   const [page, setPage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /** the colour the page wants behind the status bar (the player's, while it covers the screen), or null */
+  const [top, setTop] = useState<string | null>(null)
   const web = useRef<React.ComponentRef<typeof WebView> | null>(null)
   const canGoBack = useRef(false)
   const pending = useRef<string[]>([])
@@ -121,13 +123,16 @@ export default function App() {
       Linking.openURL(msg.url).catch(() => {})
     } else if (msg.type === 'permission') {
       askForMusic()
+    } else if (msg.type === 'top') {
+      setTop(typeof msg.color === 'string' ? msg.color : null)
     }
   }, [open])
 
   const background = scheme === 'dark' ? DARK : LIGHT
   return (
     <View style={[styles.root, { backgroundColor: background, paddingTop: RNStatusBar.currentHeight || 0 }]}>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={top || scheme === 'dark' ? 'light' : 'dark'} />
+      {top ? <View style={[styles.top, { height: RNStatusBar.currentHeight || 0, backgroundColor: top }]} /> : null}
       {error ? (
         <View style={styles.center}><Text style={styles.error}>{error}</Text></View>
       ) : !page ? (
@@ -164,6 +169,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  top: { position: 'absolute', top: 0, left: 0, right: 0 },
   web: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   error: { color: '#1fb866', textAlign: 'center', fontSize: 15 },

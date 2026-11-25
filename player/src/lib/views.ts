@@ -23,6 +23,8 @@ export type View =
   | { v: 'recent' }
   | { v: 'settings' }
   | { v: 'get' }
+  // a phone's «Tu biblioteca» tab (on a wide screen the library is the sidebar)
+  | { v: 'library'; show?: string }
 
 const BARE = ['downloads', 'soundlift', 'spotify', 'songs', 'albums', 'artists', 'likes', 'recent', 'settings', 'get'] as const
 
@@ -36,6 +38,7 @@ export function viewFromQuery(query: Record<string, unknown>): View {
   if (v === 'lalbum' && query.key) return { v, key: String(query.key) }
   if (v === 'lartist' && query.name) return { v, name: String(query.name) }
   if (v === 'llist' && query.id) return { v, id: String(query.id) }
+  if (v === 'library') return query.show ? { v, show: String(query.show) } : { v }
   if ((BARE as readonly string[]).includes(v)) return { v } as View
   return { v: 'home' }
 }
@@ -45,6 +48,7 @@ export function queryFromView(view: View): Record<string, string> {
   if (view.v === 'folder' || view.v === 'lfolder') return { v: view.v, path: view.path }
   if (view.v === 'lalbum') return { v: view.v, key: view.key }
   if (view.v === 'lartist') return { v: view.v, name: view.name }
+  if (view.v === 'library') return { v: 'library', ...(view.show ? { show: view.show } : {}) }
   if ('id' in view) return { v: view.v, id: String(view.id) }
   return { v: view.v }
 }

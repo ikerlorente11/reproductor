@@ -7,7 +7,7 @@
         <span class="rp-ticon"><i :class="['rp-i', nowPlaying?.key === s.key && player.playing ? 'rp-i-pause' : 'rp-i-play']" aria-hidden="true"></i></span>
       </button>
       <span class="rp-tinfo">
-        <span class="rp-ellipsis">{{ s.title }}</span>
+        <span class="rp-ellipsis" @click="phone && play(songs, s)">{{ s.title }}</span>
         <small v-if="showArtist || showAlbum" class="rp-muted rp-ellipsis">
           <template v-if="showArtist && s.artist"><a href="#" @click.prevent="toArtist(s)">{{ s.artist }}</a></template>
           <template v-if="showArtist && showAlbum && s.artist && s.album"> · </template>
@@ -20,6 +20,7 @@
         <button v-if="removable" class="rp-mini rp-hover" :title="removeLabel" :aria-label="removeLabel" @click="emit('remove', s, i)"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
         <span v-if="extra" class="rp-muted rp-small rp-tdate">{{ extra(s, i) }}</span>
         <span class="rp-muted rp-small rp-tdur">{{ fmtTime(s.duration) }}</span>
+        <button v-if="phone" class="rp-mini rp-tmore" aria-label="Más opciones" @click.stop="toggleRow"><i class="rp-i rp-i-more" aria-hidden="true"></i></button>
       </span>
     </li>
   </ol>
@@ -30,6 +31,7 @@ import { fmtTime, type Song } from '../lib/library'
 import { nowPlaying, play, player } from '../lib/player'
 import { useStore } from '../lib/store'
 import AddToDeviceList from './AddToDeviceList.vue'
+import { isPhone as phone, toggleRow } from '../lib/phone'
 
 /** Songs from anywhere (this device, the cloud, a list of yours): play, like, add to a list of yours. */
 withDefaults(defineProps<{

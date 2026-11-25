@@ -139,7 +139,11 @@ export const hasNext = computed(() => state.index < state.queue.length - 1 || (s
 export function setResolver(fn: (song: Song) => Promise<Resolved>) { resolver = fn }
 
 /** The app's own output (before anything plays): Android's, which goes on with the screen off. */
-export function setOutput(make: () => AudioOutput) { customOutput = make }
+export function setOutput(make: () => AudioOutput) {
+  customOutput = make
+  // made now, not on the first play: it may be sounding already (the page was loaded again while it played) and says so
+  if (!audio) el()
+}
 
 function el(): AudioOutput {
   if (audio) return audio

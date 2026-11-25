@@ -77,6 +77,7 @@ import { DEFAULT_RULES, fmtFans, kindLabel, statusLabel, fmtDate } from '../lib/
 import { useStore } from '../lib/store'
 import AddToPlaylist from './AddToPlaylist.vue'
 import TrackList from './TrackList.vue'
+import { isPhone } from '../lib/phone'
 
 type Tab = 'all' | 'artists' | 'albums' | 'playlists' | 'tracks'
 const TABS: { value: Tab; label: string }[] = [
@@ -168,7 +169,7 @@ async function refreshTracks() {
 }
 
 onMounted(() => {
-  input.value?.focus()
+  if (!isPhone.value) input.value?.focus()   // on a phone the keyboard would cover the tabs: it opens on touching the box
   if (query.value.trim()) run()
 })
 </script>

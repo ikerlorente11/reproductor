@@ -88,10 +88,11 @@
         <ol class="rp-tracks">
           <li v-for="(s, i) in songs" :key="s.key" :class="{ on: nowPlaying?.key === s.key }" @dblclick="play(songs, s)">
             <button class="rp-tplay" @click="play(songs, s)"><span class="rp-tnum">{{ i + 1 }}</span><span class="rp-ticon"><i :class="['rp-i', nowPlaying?.key === s.key && player.playing ? 'rp-i-pause' : 'rp-i-play']" aria-hidden="true"></i></span></button>
-            <span class="rp-tinfo"><span class="rp-ellipsis">{{ s.title }}</span><small class="rp-muted rp-ellipsis">{{ s.artist }} · {{ s.album }}</small></span>
+            <span class="rp-tinfo"><span class="rp-ellipsis" @click="phone && play(songs, s)">{{ s.title }}</span><small class="rp-muted rp-ellipsis">{{ s.artist }} · {{ s.album }}</small></span>
             <span class="rp-tright">
               <span class="rp-muted rp-small rp-tdur">{{ fmtTime(s.duration) }}</span>
               <button class="rp-mini rp-hover" title="Quitar esta canción de la lista" @click="dropSong(pl.songs[i])"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
+              <button v-if="phone" class="rp-mini rp-tmore" aria-label="Más opciones" @click.stop="toggleRow"><i class="rp-i rp-i-more" aria-hidden="true"></i></button>
             </span>
           </li>
           <li v-for="p in pendingSongs" :key="'p' + p.entry.id" class="off rp-pending-song">
@@ -130,6 +131,7 @@
 
 <script setup lang="ts">
 import OfflineButton from './OfflineButton.vue'
+import { isPhone as phone, toggleRow } from '../lib/phone'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { Playlist, PlaylistEntry, PlaylistSong, Release } from '../lib/api'
 import { downloadState, fmtTime, isBusy, kindLabel, playlistSongs, fmtDate } from '../lib/library'

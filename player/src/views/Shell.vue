@@ -1,6 +1,6 @@
 <template>
-  <div class="rp">
-    <aside class="rp-side" aria-label="Tu biblioteca">
+  <div :class="['rp', { 'rp-phone': phone }]">
+    <aside v-if="!phone" class="rp-side" aria-label="Tu biblioteca">
       <div class="rp-brand">
         <span class="rp-brand-mark" aria-hidden="true"><i class="rp-i rp-i-music" aria-hidden="true"></i></span>
         <strong>El Reproductor</strong>
@@ -24,8 +24,6 @@
           </a>
           <a href="#" :class="{ on: view.v === 'spotify' }" @click.prevent="go({ v: 'spotify' })"><span class="rp-ni"><i class="rp-i rp-i-up" aria-hidden="true"></i></span> Traer tu Spotify</a>
         </template>
-        <!-- on a phone «Ajustes» (at the bottom of the side on a wide screen) is one more tab -->
-        <a v-if="$slots.settings" href="#" class="rp-phone-only" :class="{ on: view.v === 'settings' }" @click.prevent="go({ v: 'settings' })"><span class="rp-ni"><i class="rp-i rp-i-settings" aria-hidden="true"></i></span> Ajustes</a>
       </nav>
       <div class="rp-lib">
         <div class="rp-libfilter">
@@ -124,6 +122,16 @@
     </aside>
 
     <main ref="mainEl" class="rp-main">
+      <!-- a phone: back on the pages under a tab; the app's name and its settings on Inicio -->
+      <div v-if="phone && view.v !== 'search' && view.v !== 'library'" :class="['rp-ptopbar', { 'rp-ptopbar-home': view.v === 'home' }]">
+        <template v-if="view.v === 'home'">
+          <span class="rp-brand-mark" aria-hidden="true"><i class="rp-i rp-i-music" aria-hidden="true"></i></span><strong>El Reproductor</strong>
+        </template>
+        <button v-else class="rp-iconbtn" aria-label="Volver" @click="goBack"><i class="rp-i rp-i-back" aria-hidden="true"></i></button>
+        <span class="rp-grow"></span>
+        <button v-if="$slots.settings && view.v === 'home'" class="rp-iconbtn" aria-label="Ajustes" @click="go({ v: 'settings' })"><i class="rp-i rp-i-settings" aria-hidden="true"></i></button>
+        <button v-if="back && view.v === 'home'" class="rp-iconbtn" :aria-label="back.label" :title="back.title || back.label" @click="back.go()"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
+      </div>
       <HandoffBanner v-if="server" />
       <p v-if="state.error" class="rp-banner rp-banner-error">
         {{ state.error }} <button class="rp-btn rp-small" @click="connect()">Reintentar</button>
@@ -149,10 +157,19 @@
       <template v-else-if="view.v === 'llist'"><MyListView :key="view.id" kind="list" :id="view.id" /></template>
       <DeviceDownloadView v-else-if="engine && view.v === 'get'" />
       <slot v-else-if="view.v === 'settings'" name="settings" />
+      <LibraryPage v-else-if="view.v === 'library'" :show="view.show" :artists="artists" :lists="lists" :folders="allFolders" :loaded="loaded"
+                   :pinned="pinned" :create="createNamed" />
       <p v-else class="rp-muted">{{ server ? 'Esta página es de la música de un equipo.' : 'Para esta página hace falta conectar un servidor de El Reproductor (en Ajustes).' }}</p>
     </main>
 
     <PlayerBar class="rp-bar" />
+    <!-- a phone: the main pages as tabs at the bottom (a page opened from one keeps it lit) -->
+    <nav v-if="phone" class="rp-tabbar" aria-label="Secciones">
+      <a v-for="t in tabs" :key="t.key" href="#" :class="{ on: tab === t.key }" @click.prevent="openTab(t)">
+        <span class="rp-tab-icon"><i :class="['rp-i', t.icon]" aria-hidden="true"></i><span v-if="t.count" class="rp-tab-count">{{ t.count }}</span></span>
+        <span class="rp-tab-name">{{ t.label }}</span>
+      </a>
+    </nav>
     <div v-if="removing" class="rp-modal" @click.self="!removing.busy && answerRemove(false)">
       <div class="rp-dialog" role="dialog" :aria-label="removing.title">
         <h2 class="rp-h2">{{ removing.title }}</h2>
@@ -205,6 +222,8 @@ import DeviceFolderView from './DeviceFolderView.vue'
 import DeviceHomeView from './DeviceHomeView.vue'
 import DeviceSearchView from './DeviceSearchView.vue'
 import MyListView from './MyListView.vue'
+import LibraryPage from './LibraryPage.vue'
+import { isPhone as phone } from '../lib/phone'
 import DeviceDownloadView from './DeviceDownloadView.vue'
 
 /**
@@ -389,6 +408,10 @@ function newPlaylist() {
 async function createPlaylist() {
   const name = newListName.value.trim()
   if (!name) { creating.value = false; return }
+  await createNamed(name)
+}
+/** A new list with this name (of the server when there is one, else of this device), opened. */
+async function createNamed(name: string) {
   if (!server) {
     const list = createList(name)
     newListName.value = ''
@@ -397,7 +420,7 @@ async function createPlaylist() {
     return
   }
   try {
-    const created = await api.createPlaylist(name)
+    const created = await api.createPlaylist(name.trim())
     newListName.value = ''
     creating.value = false
     await refreshPlaylists()
@@ -504,6 +527,32 @@ async function loadFolders() {
 const allFolders = computed<Entry[]>(() => [
   ...folders.value.map((f) => ({ key: `f${f.path}`, name: f.name, view: { v: 'folder', path: f.path } as View })),
   ...(device ? device.state.roots.map((r) => ({ key: `d${r}`, name: r.split(/[\\/]/).filter(Boolean).pop() || r, title: r, device: true, view: { v: 'lfolder', path: r } as View })) : [])
+])
+
+// ---- a phone: the tabs at the bottom, and what the library pins at its top ----
+interface Tab { key: string; label: string; icon: string; view: View; count?: number }
+const tabs = computed<Tab[]>(() => [
+  { key: 'home', label: 'Inicio', icon: 'rp-i-home', view: { v: 'home' } },
+  { key: 'search', label: 'Buscar', icon: 'rp-i-search', view: { v: 'search' } },
+  { key: 'library', label: 'Tu biblioteca', icon: 'rp-i-playlist', view: { v: 'library' } },
+  ...(server ? [{ key: 'downloads', label: 'Descargas', icon: 'rp-i-download', view: { v: 'downloads' } as View,
+                  count: state.downloads.active.length || undefined }]
+    : engine ? [{ key: 'get', label: 'Descargar', icon: 'rp-i-download', view: { v: 'get' } as View }] : [])
+])
+/** the tab lit: the one of the page, or for a page opened from a tab (an album, an artist…), that tab */
+const tab = ref('home')
+watch(() => view.value.v, (v) => {
+  const own: Record<string, string> = { home: 'home', search: 'search', library: 'library', downloads: 'downloads', get: 'get', settings: 'home' }
+  if (own[v]) tab.value = own[v]
+}, { immediate: true })
+function openTab(t: Tab) {
+  if (tab.value === t.key && view.value.v === t.view.v) { mainEl.value?.scrollTo({ top: 0, behavior: 'smooth' }); return }
+  go(t.view)
+}
+function goBack() { if (history.length > 1) history.back(); else go({ v: 'home' }) }
+const pinned = computed(() => [
+  ...(server && (soundliftState.url || soundliftState.unplaced) ? [{ key: 'soundlift', name: 'Descargar música', note: 'Pega enlaces o busca canciones sueltas', icon: 'rp-i-music', view: { v: 'soundlift' } as View }] : []),
+  ...(server ? [{ key: 'spotify', name: 'Traer tu Spotify', note: 'Tus listas y lo que sigues', icon: 'rp-i-up', view: { v: 'spotify' } as View }] : [])
 ])
 
 // ---- player: cloud path → playable URL ----

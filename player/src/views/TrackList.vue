@@ -15,7 +15,7 @@
       </button>
       <span v-else class="rp-tplay rp-tnum">{{ i + 1 }}</span>
       <span class="rp-tinfo">
-        <span class="rp-ellipsis">{{ t.title }}</span>
+        <span class="rp-ellipsis" @click="phone && !selecting && t.have === 'done' && playHit(t)">{{ t.title }}</span>
         <small v-if="showArtist || showAlbum" class="rp-muted rp-ellipsis">
           <a v-if="showArtist && t.artist_id" href="#" @click.prevent="go({ v: 'artist', id: t.artist_id })">{{ t.artist_name }}</a>
           <template v-if="showArtist && showAlbum && t.album_title"> · </template>
@@ -35,6 +35,7 @@
         <span v-if="offline?.has(t.file?.path)" class="rp-muted rp-tiny" title="En este equipo: suena sin conexión"><i class="rp-i rp-i-computer" aria-hidden="true"></i></span>
         <span v-if="showDate" class="rp-muted rp-small rp-tdate">{{ fmtDate((t as any).date) }}</span>
         <span class="rp-muted rp-small rp-tdur">{{ fmtTime(t.duration) }}</span>
+        <button v-if="phone" class="rp-mini rp-tmore" aria-label="Más opciones" @click.stop="toggleRow"><i class="rp-i rp-i-more" aria-hidden="true"></i></button>
       </span>
       <span v-else class="rp-tright"><span class="rp-muted rp-small rp-tdur">{{ fmtTime(t.duration) }}</span></span>
     </li>
@@ -51,6 +52,7 @@ import { downloadState, fmtDate, fmtTime, heldSongs } from '../lib/library'
 import { nowPlaying, play, player } from '../lib/player'
 import { useStore } from '../lib/store'
 import AddToPlaylist from './AddToPlaylist.vue'
+import { isPhone as phone, toggleRow } from '../lib/phone'
 import SelectionBar from './SelectionBar.vue'
 
 /** Songs of the catalogue (an album, a Deezer playlist, search results), each with what I have of it. */

@@ -221,21 +221,6 @@
 .rp-toast-error { background: #c62f42; color: #fff; }
 
 /* ---- narrow screens: the library goes on top, the player stacks ---- */
-@media (max-width: 760px) {
-  .rp { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "side" "main" "bar"; }
-  .rp-side { border-right: 0; border-bottom: 1px solid var(--rp-line); padding: 8px; }
-  .rp-brand, .rp-back { display: none; }
-  /* the pages as tabs: the icon over a short name, all of them in one row */
-  .rp-nav { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
-  .rp-nav a { flex-direction: column; justify-content: center; gap: 3px; padding: 7px 2px; font-size: 11px; line-height: 1.15; text-align: center; }
-  .rp-nav a .rp-count { position: absolute; top: 2px; right: 4px; }
-  .rp .rp-nav a.rp-phone-only { display: flex; }
-  .rp-lib { max-height: 120px; }
-  .rp-page { padding: 14px 14px 30px; }
-  .rp-player { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 8px 12px; }
-  .rp-pcenter { grid-column: 1 / -1; grid-row: 2; }
-  .rp-pright .rp-vol, .rp-pright .rp-muted { display: none; }
-}
 
 /* ---- playlists ---- */
 .rp-libh-row { display: flex; align-items: center; justify-content: space-between; }
@@ -288,7 +273,6 @@
 
 /* ---- downloads ---- */
 .rp-nav a { position: relative; }
-.rp-nav a.rp-phone-only { display: none; }
 .rp-count { margin-left: auto; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--rp-accent); color: var(--rp-on-accent);
   font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
 .rp-count-bad { background: #c62f42; color: #fff; }
@@ -335,6 +319,7 @@ a.rp-strip:hover { filter: brightness(.97); }
 .rp-i-repeat { --rp-i: url('/icons/repeat-line.svg'); }
 .rp-i-prev { --rp-i: url('/icons/skip-back-fill.svg'); }
 .rp-i-next { --rp-i: url('/icons/skip-forward-fill.svg'); }
+.rp-i-more { --rp-i: url('/icons/more-2-fill.svg'); }
 .rp-i-queue { --rp-i: url('/icons/play-list-line.svg'); }
 .rp-i-lyrics { --rp-i: url('/icons/chat-quote-line.svg'); }
 .rp-i-volume { --rp-i: url('/icons/volume-up-line.svg'); }
@@ -718,3 +703,143 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 .rp-libs-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
 .rp-libs-form .rp-input { padding: 8px 12px; font-size: 14px; }
 .rp-libs-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---- a phone (isPhone: narrow screens): tabs at the bottom, a bar of the player over them, the player over the whole
+   screen when touched; the pages roomier and centred, as the music apps people know ---- */
+.rp.rp-phone { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; grid-template-areas: "main" "bar" "tabs"; }
+.rp-phone .rp-page { padding: 8px 16px 28px; gap: 18px; }
+.rp-phone .rp-h1 { font-size: 26px; }
+.rp-phone .rp-h1.rp-big { font-size: clamp(24px, 7.4vw, 34px); }
+.rp-phone .rp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.rp-phone .rp-card { padding: 0; background: transparent; gap: 6px; }
+.rp-phone .rp-card:hover { background: transparent; }
+.rp-phone .rp-cover-play { opacity: 1; transform: none; width: 38px; height: 38px; }
+/* an album's or artist's page: the cover big and centred on top, then its name and its buttons */
+.rp-phone .rp-hero { flex-direction: column; align-items: stretch; gap: 14px; padding-top: 0; }
+.rp-phone .rp-hero-pic { width: min(66vw, 300px); align-self: center; border-radius: 6px; box-shadow: 0 18px 46px rgba(0,0,0,.45); }
+.rp-phone .rp-hero-pic.rp-round { border-radius: 50%; }
+.rp-phone .rp-hero-text { flex: none; gap: 4px; }
+.rp-phone .rp-hero-actions { gap: 8px; }
+.rp-phone .rp-hero-actions .rp-round-btn { order: 10; margin-left: auto; width: 54px; height: 54px; }
+.rp-phone .rp-btn { min-height: 36px; }
+
+.rp-iconbtn { width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%;
+  background: transparent; color: inherit; cursor: pointer; font-size: 20px; }
+.rp-iconbtn:active { background: var(--rp-surface-3); }
+.rp-iconbtn.on { color: var(--rp-accent-2); }
+.rp-iconbtn .rp-i { width: 22px; height: 22px; }
+
+/* the bar on top of a page: back, or on Inicio the app's name and its settings */
+.rp-ptopbar { position: sticky; top: 0; z-index: 15; display: flex; align-items: center; gap: 10px; padding: 6px 8px;
+  background: color-mix(in srgb, var(--oc-role-background, #fff) 88%, transparent); backdrop-filter: blur(10px); }
+.rp-ptopbar-home { position: static; padding: 10px 12px 2px 16px; background: none; backdrop-filter: none; font-size: 17px; }
+.rp-ptopbar .rp-brand-mark { width: 30px; height: 30px; border-radius: 9px; font-size: 16px; }
+
+/* the tabs */
+.rp-tabbar { grid-area: tabs; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 4px 4px 6px;
+  background: var(--oc-role-background, #fff); border-top: 1px solid var(--rp-line); }
+.rp-tabbar a { display: grid; justify-items: center; gap: 3px; padding: 6px 2px 2px; text-decoration: none; color: var(--rp-muted); font-size: 11px;
+  font-weight: 600; min-width: 0; -webkit-tap-highlight-color: transparent; }
+.rp-tabbar a.on { color: var(--oc-role-on-surface, #1b1b1f); }
+.rp-tabbar a.on .rp-tab-icon { color: var(--rp-accent-2); }
+.rp-tab-icon { position: relative; font-size: 23px; line-height: 1; }
+.rp-tab-icon .rp-i { width: 24px; height: 24px; }
+.rp-tab-count { position: absolute; top: -4px; left: 16px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--rp-accent);
+  color: var(--rp-on-accent); font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; }
+.rp-tab-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the player's bar over the tabs, in the colour of the cover */
+.rp-minibar { position: relative; display: flex; align-items: center; gap: 10px; margin: 0 8px 4px; padding: 7px 8px 9px; border-radius: 9px;
+  background: var(--rp-tint, #34343b); color: #fff; cursor: pointer; overflow: visible; transition: background .4s; }
+.rp-minibar-cover { width: 40px; height: 40px; border-radius: 5px; object-fit: cover; flex: none; font-size: 18px; }
+.rp-minibar-text { flex: 1; display: grid; min-width: 0; line-height: 1.25; }
+.rp-minibar-text strong { font-size: 13.5px; }
+.rp-minibar-text small { font-size: 12.5px; color: rgba(255,255,255,.72); }
+.rp-minibar-text small .rp-i { color: var(--rp-accent); }
+.rp-minibar .rp-pbtn { color: #fff; opacity: 1; width: 38px; height: 38px; }
+.rp-minibar-play { width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent;
+  color: #fff; cursor: pointer; }
+.rp-minibar-play .rp-i { width: 26px; height: 26px; }
+.rp-minibar-progress { position: absolute; left: 8px; right: 8px; bottom: 3px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.22); overflow: hidden; }
+.rp-minibar-progress i { display: block; height: 100%; background: #fff; }
+.rp-phone .rp-devmenu { position: fixed; left: 10px; right: 10px; bottom: 136px; top: auto; width: auto; z-index: 90; color: var(--oc-role-on-surface, #1b1b1f); }
+
+/* the player over the whole screen */
+.rp-full { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; gap: 14px; padding: 10px 22px 22px; color: #fff; overflow: hidden;
+  background: linear-gradient(180deg, var(--rp-tint, #3a3a42) 0%, color-mix(in srgb, var(--rp-tint, #3a3a42) 45%, #121214) 48%, #121214 100%);
+  animation: rp-full-in .22s ease-out; }
+@keyframes rp-full-in { from { transform: translateY(24px); opacity: .4; } }
+.rp-full-head { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; gap: 8px; }
+.rp-full-from { display: grid; text-align: center; min-width: 0; line-height: 1.2; }
+.rp-full-from small { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.75); }
+.rp-full-from strong { font-size: 13px; }
+.rp-full .rp-iconbtn:active { background: rgba(255,255,255,.14); }
+.rp-full-art { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px 0; }
+.rp-full-art img, .rp-full-art .rp-cover-none { width: min(100%, 52vh); aspect-ratio: 1; object-fit: cover; border-radius: 8px; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+.rp-full-art .rp-cover-none { height: auto; font-size: 72px; background: rgba(255,255,255,.08); }
+.rp-full-meta { display: grid; gap: 4px; min-width: 0; }
+.rp-full-title { font-size: 22px; font-weight: 800; text-decoration: none; color: #fff !important; }
+.rp-full-artist { font-size: 15.5px; color: rgba(255,255,255,.75) !important; text-decoration: none; }
+.rp-full-progress { display: grid; gap: 2px; }
+.rp-full .rp-pbarline { height: 24px; }
+.rp-full .rp-pbartrack { height: 4px; background: rgba(255,255,255,.25); }
+.rp-full .rp-pbartrack i, .rp-full .rp-pbarline:hover .rp-pbartrack i { background: #fff; }
+.rp-full .rp-pbarknob { opacity: 1; background: #fff; width: 13px; height: 13px; }
+.rp-full-times { display: flex; justify-content: space-between; font-size: 11.5px; font-variant-numeric: tabular-nums; color: rgba(255,255,255,.7); }
+.rp-full-controls { display: flex; align-items: center; justify-content: space-between; }
+.rp-fbtn { width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: transparent;
+  color: rgba(255,255,255,.85); cursor: pointer; }
+.rp-fbtn .rp-i { width: 24px; height: 24px; }
+.rp-fbtn.on { color: var(--rp-accent); }
+.rp-fbtn:disabled { opacity: .35; }
+.rp-fbtn-big { color: #fff; }
+.rp-fbtn-big .rp-i { width: 34px; height: 34px; }
+.rp-fbtn-main { width: 68px; height: 68px; background: #fff; color: #121214; }
+.rp-fbtn-main .rp-i { width: 30px; height: 30px; }
+.rp-fbtn-main .rp-spin { width: 22px; height: 22px; }
+.rp-full-foot { display: flex; align-items: center; min-height: 40px; }
+.rp-full-foot .rp-pbtn { color: #fff; opacity: .85; width: 42px; height: 42px; }
+.rp-full-foot .rp-pbtn .rp-i { width: 22px; height: 22px; }
+.rp-full .rp-perror { color: #ffb3bd; }
+/* the lyrics and the queue: a sheet over the player */
+.rp-full .rp-sheet { position: absolute; inset: 0; width: auto; height: auto; max-height: none; right: auto; bottom: auto; z-index: 5; border-radius: 0;
+  border: 0; box-shadow: none; color: inherit; background: var(--rp-tint, #3a3a42); padding: 10px 16px 18px; }
+.rp-full .rp-queue.rp-sheet { background: #17171a; overflow-y: auto; }
+.rp-full .rp-queue li { padding: 8px 6px; }
+.rp-full .rp-queue li.on { background: rgba(255,255,255,.08); color: var(--rp-accent); }
+.rp-full .rp-queue .rp-muted, .rp-full .rp-sheet .rp-muted { color: rgba(255,255,255,.65); }
+.rp-full .rp-sheet .rp-mini, .rp-full .rp-sheet .rp-btn { color: #fff; border-color: rgba(255,255,255,.3); background: transparent; }
+
+/* «Tu biblioteca» */
+.rp-libpage { gap: 12px; }
+.rp-libpage-head { display: flex; align-items: center; gap: 4px; }
+.rp-libpage-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.rp-libpage-chips .rp-chip { background: var(--rp-surface-2); border-color: transparent; color: inherit; font: inherit; font-size: 13px; white-space: nowrap; }
+.rp-libpage-filter, .rp-libpage-new .rp-input { width: 100%; padding: 10px 12px; font-size: 15px; }
+.rp-libpage-new { display: flex; gap: 8px; }
+.rp-librows { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.rp-librows a { display: flex; align-items: center; gap: 12px; padding: 6px 0; text-decoration: none; min-width: 0; }
+.rp-librows a:active { opacity: .7; }
+.rp-librow-pic { width: 58px; height: 58px; flex: none; border-radius: 6px; object-fit: cover; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--rp-surface-3); color: var(--rp-accent); font-size: 24px; }
+.rp-librow-pic.round { border-radius: 50%; }
+.rp-librow-pinned { background: linear-gradient(135deg, var(--rp-accent-2), #0f5f37); color: #fff; }
+.rp-librow-text { display: grid; gap: 2px; min-width: 0; line-height: 1.25; }
+.rp-librow-text > span { font-size: 15.5px; font-weight: 600; }
+.rp-librow-text small { font-size: 13px; }
+.rp-libpage-none { margin: 8px 0; }
+
+/* a song's row on a phone: the title plays it; its actions behind «⋯» */
+.rp-tmore { display: none; }
+.rp-phone .rp-tmore { display: inline-flex; border-color: transparent; background: transparent; }
+.rp-phone .rp-tracks li { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; padding: 4px 0; min-height: 54px; }
+.rp-phone .rp-tracks li:hover { background: transparent; }
+.rp-phone .rp-tracks .rp-tinfo > .rp-ellipsis { font-size: 15.5px; cursor: pointer; }
+.rp-phone .rp-tracks .rp-hover, .rp-phone .rp-tracks .rp-tdate, .rp-phone .rp-tracks .rp-tdur { display: none; }
+.rp-phone .rp-tracks li.rp-open { grid-template-columns: 34px minmax(0, 1fr); }
+.rp-phone .rp-tracks li.rp-open .rp-tright { grid-column: 1 / -1; justify-content: flex-end; flex-wrap: wrap; padding-bottom: 6px; }
+.rp-phone .rp-tracks li.rp-open .rp-hover, .rp-phone .rp-tracks li.rp-open .rp-tdur { display: inline-flex; opacity: 1; }
+.rp-phone .rp-tracks li.rp-open .rp-tmore { color: var(--rp-accent-2); }
+/* «En este equipo» under the server's search: a section of the page, with its margins */
+.rp-main > .rp-section { padding: 0 24px 40px; display: grid; gap: 16px; }
+.rp-phone .rp-main > .rp-section { padding: 0 16px 28px; }

@@ -1,5 +1,85 @@
 <template>
-  <footer v-if="shown" :class="['rp-player', { 'rp-player-far': far }]" aria-label="Reproductor">
+  <!-- a phone: a bar over the tabs while moving around the app; touched, the player takes the whole screen -->
+  <template v-if="phone">
+    <div v-if="shown" v-bind="$attrs" class="rp-minibar" :style="{ '--rp-tint': tint || undefined }" role="button" tabindex="0" aria-label="Abrir el reproductor"
+         @click="openFull" @keydown.enter="openFull">
+      <img v-if="shown.cover" :src="shown.cover" alt="" class="rp-minibar-cover" />
+      <span v-else class="rp-minibar-cover rp-cover-none"><i class="rp-i rp-i-album" aria-hidden="true"></i></span>
+      <span class="rp-minibar-text">
+        <strong class="rp-ellipsis">{{ shown.title }}</strong>
+        <small class="rp-ellipsis">
+          <template v-if="far"><i class="rp-i rp-i-devices" aria-hidden="true"></i> {{ controlled?.name }}</template>
+          <template v-else>{{ shown.artist }}</template>
+        </small>
+      </span>
+      <span class="rp-minibar-devices" @click.stop><DevicePicker v-if="connect.on" /></span>
+      <button class="rp-minibar-play" :disabled="view.loading" :aria-label="view.playing ? 'Pausar' : 'Reproducir'" @click.stop="control.toggle">
+        <span v-if="view.loading" class="rp-spin"></span><i v-else :class="['rp-i', view.playing ? 'rp-i-pause' : 'rp-i-play']" aria-hidden="true"></i>
+      </button>
+      <span class="rp-minibar-progress"><i :style="{ width: playedFraction * 100 + '%' }"></i></span>
+    </div>
+
+    <div v-if="full && shown" class="rp-full" :style="{ '--rp-tint': tint || undefined }" role="dialog" aria-label="Reproduciendo"
+         @touchstart.passive="swipeStart" @touchend="swipeEnd">
+      <header class="rp-full-head">
+        <button class="rp-iconbtn" aria-label="Cerrar el reproductor" @click="closeFull"><i class="rp-i rp-i-down" aria-hidden="true"></i></button>
+        <span class="rp-full-from">
+          <small>{{ far ? 'Reproduciendo en' : shown.album ? 'Del disco' : 'Reproduciendo' }}</small>
+          <strong class="rp-ellipsis">{{ far ? controlled?.name : shown.album || shown.artist }}</strong>
+        </span>
+        <button v-if="!far" class="rp-iconbtn" aria-label="Cola" @click="showQueue = true; showLyrics = false"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
+        <span v-else class="rp-iconbtn"></span>
+      </header>
+      <div class="rp-full-art">
+        <img v-if="shown.cover" :src="shown.cover" alt="" />
+        <span v-else class="rp-cover-none"><i class="rp-i rp-i-album" aria-hidden="true"></i></span>
+      </div>
+      <div class="rp-full-meta">
+        <a v-if="!far && albumView" href="#" class="rp-full-title rp-ellipsis" @click.prevent="goFromFull(albumView)">{{ shown.title }}</a>
+        <strong v-else class="rp-full-title rp-ellipsis">{{ shown.title }}</strong>
+        <a v-if="!far && artistView && shown.artist" href="#" class="rp-full-artist rp-ellipsis" @click.prevent="goFromFull(artistView)">{{ shown.artist }}</a>
+        <span v-else class="rp-full-artist rp-ellipsis">{{ shown.artist }}</span>
+      </div>
+      <div class="rp-full-progress" @touchstart.stop.passive @touchend.stop>
+        <div :class="['rp-pbarline', { dragging: dragAt !== null }]" role="slider" tabindex="0" aria-label="Posición"
+             :aria-valuemin="0" :aria-valuemax="Math.round(view.duration)" :aria-valuenow="Math.round(shownTime)" :aria-valuetext="fmtTime(shownTime)"
+             @pointerdown="dragStart" @pointermove="dragMove" @pointerup="dragEnd" @pointercancel="dragAt = null">
+          <span class="rp-pbartrack"><i :style="{ width: shownFraction * 100 + '%' }"></i></span>
+          <span class="rp-pbarknob" :style="{ left: shownFraction * 100 + '%' }"></span>
+        </div>
+        <div class="rp-full-times"><span>{{ fmtTime(shownTime) || '0:00' }}</span><span>{{ fmtTime(view.duration) || '0:00' }}</span></div>
+      </div>
+      <div class="rp-full-controls">
+        <button :class="['rp-fbtn', { on: view.shuffle }]" aria-label="Aleatorio" :aria-pressed="view.shuffle" @click="control.shuffle"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
+        <button class="rp-fbtn rp-fbtn-big" aria-label="Anterior" :disabled="!far && !hasPrev" @click="control.prev"><i class="rp-i rp-i-prev" aria-hidden="true"></i></button>
+        <button class="rp-fbtn rp-fbtn-main" :disabled="view.loading" :aria-label="view.playing ? 'Pausar' : 'Reproducir'" @click="control.toggle">
+          <span v-if="view.loading" class="rp-spin"></span><i v-else :class="['rp-i', view.playing ? 'rp-i-pause' : 'rp-i-play']" aria-hidden="true"></i>
+        </button>
+        <button class="rp-fbtn rp-fbtn-big" aria-label="Siguiente" :disabled="!far && !hasNext" @click="control.next"><i class="rp-i rp-i-next" aria-hidden="true"></i></button>
+        <button :class="['rp-fbtn', { on: view.repeat }]" aria-label="Repetir la cola" :aria-pressed="view.repeat" @click="control.repeat"><i class="rp-i rp-i-repeat" aria-hidden="true"></i></button>
+      </div>
+      <div class="rp-full-foot">
+        <DevicePicker v-if="connect.on" />
+        <span class="rp-grow"></span>
+        <button v-if="!far" :class="['rp-fbtn', { on: showLyrics }]" aria-label="Letra" @click="showLyrics = !showLyrics; showQueue = false"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
+      </div>
+      <p v-if="player.error && !far" class="rp-perror">{{ player.error }}</p>
+      <LyricsPanel v-if="showLyrics && !far" class="rp-sheet" @close="showLyrics = false" />
+      <aside v-if="showQueue && !far" class="rp-queue rp-sheet" aria-label="Cola">
+        <header class="rp-queue-head"><strong>Cola</strong><span class="rp-muted rp-small">{{ player.index + 1 }} de {{ player.queue.length }}</span>
+          <span class="rp-grow"></span><button class="rp-mini" title="Cerrar" @click="showQueue = false"><i class="rp-i rp-i-close" aria-hidden="true"></i></button></header>
+        <ol>
+          <li v-for="(s, i) in player.queue" :key="s.key" :class="{ on: i === player.index, past: i < player.index }" @click="jump(i)">
+            <span class="rp-mini rp-queue-mark"><i :class="['rp-i', i === player.index ? 'rp-i-music' : 'rp-i-play']" aria-hidden="true"></i></span>
+            <span class="rp-tinfo"><span class="rp-ellipsis">{{ s.title }}</span><small class="rp-muted rp-ellipsis">{{ s.artist }}</small></span>
+            <button v-if="i !== player.index" class="rp-mini" title="Quitar de la cola" @click.stop="removeAt(i)"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
+          </li>
+        </ol>
+      </aside>
+    </div>
+  </template>
+
+  <footer v-else-if="shown" v-bind="$attrs" :class="['rp-player', { 'rp-player-far': far }]" aria-label="Reproductor">
     <div v-if="far" class="rp-pconnect"><i class="rp-i rp-i-devices" aria-hidden="true"></i> Reproduciendo en {{ controlled?.name }}</div>
     <div v-if="far" class="rp-pinfo">
       <img v-if="shown.cover" :src="shown.cover" alt="" class="rp-pcover" />
@@ -71,7 +151,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { coverColor } from '../lib/cover-color'
+import { isPhone as phone } from '../lib/phone'
 import { fmtTime } from '../lib/library'
 import { connect, control, controlled, remote } from '../lib/connect'
 import { hasNext, hasPrev, jump, nowPlaying as song, player, removeAt } from '../lib/player'
@@ -79,6 +161,7 @@ import { useStore, type View } from '../lib/store'
 import DevicePicker from './DevicePicker.vue'
 import LyricsPanel from './LyricsPanel.vue'
 
+defineOptions({ inheritAttrs: false })
 const { go, server, device } = useStore()
 const showQueue = ref(false)
 /** Driving another device (connect.ts): the bar shows what plays there and its buttons act there. */
@@ -127,5 +210,40 @@ function seekKey(e: KeyboardEvent) {
   e.preventDefault()
   e.stopPropagation()
   control.seek((v.time + (e.key === 'ArrowRight' ? 5 : -5)) / v.duration)
+}
+
+// ---- a phone: the player over the whole screen, with the colour of the cover behind ----
+const full = ref(false)
+const tint = ref('')
+watch(() => shown.value?.cover, async (cover) => { tint.value = (await coverColor(cover)) || '' }, { immediate: true })
+// the colour at the top of the screen, for an app that paints the system's status bar (Android): the cover's while open
+watch([full, tint], ([open, color]) => {
+  window.dispatchEvent(new CustomEvent('reproductor:top', { detail: open ? color || '#3a3a42' : null }))
+})
+/** Opened, it is one more step back: the system's back button (or the browser's) closes it. */
+function openFull() {
+  full.value = true
+  history.pushState({ ...(history.state || {}), rpFull: true }, '')
+}
+function closeFull() {
+  if (history.state?.rpFull) history.back()
+  else full.value = false
+}
+function onPop() { if (full.value && !history.state?.rpFull) { full.value = false; showLyrics.value = false; showQueue.value = false } }
+window.addEventListener('popstate', onPop)
+onBeforeUnmount(() => window.removeEventListener('popstate', onPop))
+/** A page from the player (the album, the artist): it takes the player's step, so back leads to where you were. */
+function goFromFull(v: View) {
+  full.value = false
+  showLyrics.value = false
+  showQueue.value = false
+  go(v, !!history.state?.rpFull)
+}
+// a swipe down closes it
+let swipeY: number | null = null
+function swipeStart(e: TouchEvent) { swipeY = showLyrics.value || showQueue.value ? null : e.touches[0].clientY }
+function swipeEnd(e: TouchEvent) {
+  if (swipeY !== null && e.changedTouches[0].clientY - swipeY > 110) closeFull()
+  swipeY = null
 }
 </script>

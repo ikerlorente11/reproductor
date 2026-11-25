@@ -109,6 +109,8 @@ onMounted(async () => {
   window.addEventListener('popstate', onPop)
   document.addEventListener('click', onLink, true)
   ;(window as any).__reproductorOpen = (uri: string) => playUri(uri)
+  // the player over the whole screen paints the status bar in the colour of its cover
+  window.addEventListener('reproductor:top', (e) => tellApp({ type: 'top', color: (e as CustomEvent).detail ?? null }))
   const about = await info().catch(() => null)
   if (about) {
     version.value = about.version
