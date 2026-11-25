@@ -23,8 +23,6 @@
           <template v-else>{{ song.album }}</template>
         </small>
       </span>
-      <button :class="['rp-pbtn', 'rp-like', { on: liked }]" :title="liked ? 'Quitar de Me gusta' : 'Me gusta'" :aria-pressed="liked" @click="toggleLike(song)">
-        <i :class="['rp-i', liked ? 'rp-i-heart-fill' : 'rp-i-heart']" aria-hidden="true"></i></button>
     </div>
     <div class="rp-pcenter">
       <div class="rp-pcontrols">
@@ -75,7 +73,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { fmtTime } from '../lib/library'
-import { isLiked, toggleLike } from '../lib/mine'
 import { connect, control, controlled, remote } from '../lib/connect'
 import { hasNext, hasPrev, jump, nowPlaying as song, player, removeAt } from '../lib/player'
 import { useStore, type View } from '../lib/store'
@@ -102,7 +99,6 @@ const albumView = computed<View | null>(() => (song.value?.device ? (device && s
   : server && albumOfSong.value ? { v: 'release', id: albumOfSong.value } : null))
 const artistView = computed<View | null>(() => (song.value?.device ? (device ? { v: 'lartist', name: song.value.artistName || song.value.artist } : null)
   : server && song.value?.artistId ? { v: 'artist', id: song.value.artistId } : null))
-const liked = computed(() => isLiked(song.value))
 // ---- the progress bar: click, or press and drag (it jumps there on release, so the sound does not stutter) ----
 const dragAt = ref<number | null>(null)
 const playedFraction = computed(() => (view.value.duration ? Math.min(1, view.value.time / view.value.duration) : 0))

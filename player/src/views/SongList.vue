@@ -16,8 +16,6 @@
       </span>
       <span class="rp-tright">
         <span v-if="s.device && cloudMark" class="rp-muted rp-tiny" title="En este equipo"><i class="rp-i rp-i-computer" aria-hidden="true"></i></span>
-        <button :class="['rp-mini', 'rp-like', { 'rp-hover': !isLiked(s), on: isLiked(s) }]" :title="isLiked(s) ? 'Quitar de Me gusta' : 'Me gusta'"
-                :aria-pressed="isLiked(s)" @click="toggleLike(s)"><i :class="['rp-i', isLiked(s) ? 'rp-i-heart-fill' : 'rp-i-heart']" aria-hidden="true"></i></button>
         <AddToDeviceList :songs="[s]" small class="rp-hover" />
         <button v-if="removable" class="rp-mini rp-hover" :title="removeLabel" :aria-label="removeLabel" @click="emit('remove', s, i)"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
         <span v-if="extra" class="rp-muted rp-small rp-tdate">{{ extra(s, i) }}</span>
@@ -29,7 +27,6 @@
 
 <script setup lang="ts">
 import { fmtTime, type Song } from '../lib/library'
-import { isLiked, toggleLike } from '../lib/mine'
 import { nowPlaying, play, player } from '../lib/player'
 import { useStore } from '../lib/store'
 import AddToDeviceList from './AddToDeviceList.vue'

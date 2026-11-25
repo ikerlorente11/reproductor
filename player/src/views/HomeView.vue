@@ -10,7 +10,7 @@
 
     <div v-if="state.loaded && !state.follows.length" class="rp-empty">
       <span class="rp-empty-icon"><i class="rp-i rp-i-music" aria-hidden="true"></i></span>
-      <p><strong>Sigue a tus artistas</strong> y su música se bajará sola a tu nube, también lo que saquen a partir de ahora.</p>
+      <p><strong>Sigue a tus artistas</strong> y su música se bajará sola a {{ where }}, también lo que saquen a partir de ahora.</p>
       <button class="rp-btn rp-primary" @click="go({ v: 'search' })"><i class="rp-i rp-i-search" aria-hidden="true"></i> Buscar artistas</button>
     </div>
 
@@ -67,7 +67,7 @@ import { play } from '../lib/player'
 import { useStore } from '../lib/store'
 import ReleaseCard from './ReleaseCard.vue'
 
-const { api, state, go, notify, refreshFollows } = useStore()
+const { api, state, go, notify, refreshFollows, where } = useStore()
 const recent = ref<Release[]>([])
 const failed = ref<Release[]>([])
 const loading = ref(true)

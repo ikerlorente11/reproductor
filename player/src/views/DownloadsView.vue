@@ -64,7 +64,7 @@ import type { Release } from '../lib/api'
 import { albumOf, downloadState, kindLabel } from '../lib/library'
 import { useStore } from '../lib/store'
 
-const { api, state, go, notify, refreshDownloads } = useStore()
+const { api, state, go, notify, refreshDownloads, where } = useStore()
 const d = computed(() => state.downloads)
 
 function ago(t?: number) {
@@ -78,7 +78,7 @@ function open(r: Release) {
 }
 const cancelling = reactive(new Set<number>())
 async function cancel(r: Release) {
-  if (r.status === 'downloading' && !window.confirm(`¿Cancelar «${r.title}»? Lo que ya se haya bajado se queda en la nube.`)) return
+  if (r.status === 'downloading' && !window.confirm(`¿Cancelar «${r.title}»? Lo que ya se haya bajado se queda en ${where}.`)) return
   cancelling.add(r.release_id)
   try {
     await api.choose(r.release_id, 'cancel')

@@ -42,6 +42,8 @@ export interface Store {
   musicRoot: string
   /** the cloud's name, as people know it (where deleted songs go, where soundlift delivers) */
   cloudName: string
+  /** where the music is, in words: «tu nube» (the web) or «este equipo» (an app with its own engine) */
+  where: string
   files: Files
   state: { follows: Follow[]; playlists: PlaylistSummary[]; downloads: Downloads; albums: Release[]; loaded: boolean; connected: boolean; error: string }
   refreshFollows: () => Promise<void>

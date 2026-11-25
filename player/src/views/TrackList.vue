@@ -29,7 +29,7 @@
           <span v-if="busy.has(t.id)" class="rp-spin"></span><template v-else><i class="rp-i rp-i-download" aria-hidden="true"></i></template>
         </button>
         <AddToPlaylist kind="song" :id="t.id" small class="rp-hover" @added="!t.have && emit('changed')" />
-        <button v-if="t.have === 'done' && t.file" class="rp-mini rp-hover rp-mini-danger" title="Borrar esta canción de tu nube" aria-label="Borrar esta canción" @click="removeSong(t)">
+        <button v-if="t.have === 'done' && t.file" class="rp-mini rp-hover rp-mini-danger" :title="`Borrar esta canción de ${where}`" aria-label="Borrar esta canción" @click="removeSong(t)">
           <i class="rp-i rp-i-delete" aria-hidden="true"></i>
         </button>
         <span v-if="showDate" class="rp-muted rp-small rp-tdate">{{ fmtDate((t as any).date) }}</span>
@@ -55,7 +55,7 @@ import SelectionBar from './SelectionBar.vue'
 /** Songs of the catalogue (an album, a Deezer playlist, search results), each with what I have of it. */
 const props = withDefaults(defineProps<{ hits: TrackHit[]; showArtist?: boolean; showAlbum?: boolean; showDate?: boolean }>(), { showArtist: false, showAlbum: false, showDate: false })
 const emit = defineEmits<{ changed: [] }>()
-const { api, state, go, notify, refreshFollows, refreshDownloads, remove } = useStore()
+const { api, state, go, notify, refreshFollows, refreshDownloads, remove, where } = useStore()
 const busy = reactive(new Set<number>())
 
 // ---- choosing several songs to delete them at once (shift-click takes the stretch in between) ----

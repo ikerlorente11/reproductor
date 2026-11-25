@@ -23,7 +23,7 @@
             <span v-if="badge" :class="['rp-badge', 'rp-badge-big', `rp-badge-${album.mine!.status}`]" :title="label.hint">{{ label.text }}</span>
             <button v-if="album.mine?.status === 'wanted' && album.followed" class="rp-btn" @click="skip">No bajar</button>
             <AddToPlaylist kind="release" :id="album.id" :followed="album.followed" />
-            <button v-if="songs.length" class="rp-btn rp-danger" title="Borrar de tu nube las canciones que tienes de este disco" @click="removeAlbum">
+            <button v-if="songs.length" class="rp-btn rp-danger" :title="`Borrar de ${where} las canciones que tienes de este disco`" @click="removeAlbum">
               <i class="rp-i rp-i-delete" aria-hidden="true"></i> Borrar
             </button>
           </div>
@@ -48,7 +48,7 @@ import TrackList from './TrackList.vue'
 
 /** Any release of the catalogue: mine (downloaded, on its way, left out) or not; each song with what I have. */
 const props = defineProps<{ id: number }>()
-const { api, state, go, notify, refreshFollows, remove } = useStore()
+const { api, state, go, notify, refreshFollows, remove, where } = useStore()
 const album = ref<AlbumPage | null>(null)
 const error = ref('')
 const busy = ref(false)

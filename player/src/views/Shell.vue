@@ -8,12 +8,6 @@
       <nav class="rp-nav">
         <a href="#" :class="{ on: view.v === 'home' }" @click.prevent="go({ v: 'home' })"><span class="rp-ni"><i class="rp-i rp-i-home" aria-hidden="true"></i></span> Inicio</a>
         <a href="#" :class="{ on: view.v === 'search' }" @click.prevent="go({ v: 'search' })"><span class="rp-ni"><i class="rp-i rp-i-search" aria-hidden="true"></i></span> Buscar</a>
-        <template v-if="device">
-          <a href="#" :class="{ on: view.v === 'songs' }" @click.prevent="go({ v: 'songs' })"><span class="rp-ni"><i class="rp-i rp-i-music" aria-hidden="true"></i></span> Canciones</a>
-          <a href="#" :class="{ on: view.v === 'albums' || view.v === 'lalbum' }" @click.prevent="go({ v: 'albums' })"><span class="rp-ni"><i class="rp-i rp-i-album" aria-hidden="true"></i></span> Discos</a>
-          <a v-if="server" href="#" :class="{ on: view.v === 'artists' }" @click.prevent="go({ v: 'artists' })"><span class="rp-ni"><i class="rp-i rp-i-computer" aria-hidden="true"></i></span> Artistas del equipo</a>
-        </template>
-        <a href="#" :class="{ on: view.v === 'likes' }" @click.prevent="go({ v: 'likes' })"><span class="rp-ni"><i class="rp-i rp-i-heart" aria-hidden="true"></i></span> Me gusta</a>
         <a v-if="engine && !server" href="#" :class="{ on: view.v === 'get' }" @click.prevent="go({ v: 'get' })"><span class="rp-ni"><i class="rp-i rp-i-download" aria-hidden="true"></i></span> Descargar música</a>
         <template v-if="server">
           <a href="#" :class="{ on: view.v === 'downloads' }" @click.prevent="go({ v: 'downloads' })">
@@ -160,7 +154,7 @@
       <div class="rp-dialog" role="dialog" :aria-label="removing.title">
         <h2 class="rp-h2">{{ removing.title }}</h2>
         <p>
-          {{ removing.paths.length === 1 ? 'Se borra 1 canción' : `Se borran ${removing.paths.length} canciones` }} de tu nube.
+          {{ removing.paths.length === 1 ? 'Se borra 1 canción' : `Se borran ${removing.paths.length} canciones` }} de {{ where }}.
           Van a la papelera de {{ cloudName }}, desde donde se pueden recuperar.
         </p>
         <p v-if="removing.detail" class="rp-muted">{{ removing.detail }}</p>
@@ -231,6 +225,10 @@ const props = defineProps<{
   navigate: (view: View, replace?: boolean) => void
   musicRoot?: string
   cloudName?: string
+  /** where the music is, in words (default «tu nube»; an app with its own engine: «este equipo») */
+  where?: string
+  /** songs of the device under this folder are the server's too (an app's engine downloads there): not twice */
+  deviceAlso?: string
   /** a link out of the app (the web: back to the cloud's files) */
   back?: { label: string; title?: string; go: () => void }
   playFile?: string
@@ -248,6 +246,7 @@ const device = props.device || null
 const engine = props.engine || null
 const musicRoot = props.musicRoot || 'Música'
 const cloudName = props.cloudName || 'tu nube'
+const where = props.where || 'tu nube'
 const rootPath = `/${musicRoot}`
 const state = createState()
 const mainEl = ref<HTMLElement>()
@@ -352,7 +351,12 @@ async function loadSongs() {
 watch(filtering, (on) => { if (on && !librarySongs.value) loadSongs() })
 watch(() => state.downloads.recent.length, () => { librarySongs.value = null; if (filtering.value) loadSongs() })
 /** with the songs of this device, which need no loading */
-const deviceSongs = computed(() => (device ? device.songs(device.state.tracks) : []))
+const deviceSongs = computed(() => {
+  if (!device) return []
+  const also = server && props.deviceAlso ? props.deviceAlso.toLowerCase().replace(/[\\/]+$/, '') : ''
+  const tracks = also ? device.state.tracks.filter((t) => !t.path.toLowerCase().startsWith(also)) : device.state.tracks
+  return device.songs(tracks)
+})
 const matchedSongs = computed(() => {
   if (!filtering.value || (!librarySongs.value && !device)) return []
   const words = plain(filter.value.trim()).split(/\s+/)
@@ -399,7 +403,7 @@ async function connect() {
     state.connected = true
     if (props.me) startConnect(api, props.me, notify, !!props.oneTab)
   } catch (err: any) {
-    state.error = `No se pudo conectar El Reproductor con tu nube: ${err?.message || err}`
+    state.error = `No se pudo conectar El Reproductor con ${where}: ${err?.message || err}`
     return
   }
   await Promise.all([refreshFollows(), refreshPlaylists(), refreshDownloads(), refreshAlbums(), refreshUnplaced()])
@@ -411,7 +415,7 @@ const removing = ref<Removing | null>(null)
 function remove(req: RemoveRequest): Promise<boolean> {
   const paths = [...new Set(req.paths.filter((p): p is string => !!p))]
   if (!paths.length) {
-    notify('No hay nada de eso en tu nube.', true)
+    notify(`No hay nada de eso en ${where}.`, true)
     return Promise.resolve(false)
   }
   return new Promise((resolve) => { removing.value = { ...req, paths, busy: false, done: 0, resolve } })
@@ -469,7 +473,7 @@ async function pruneFolders(paths: string[]) {
   }
 }
 
-provide(STORE, { api, server, device, engine, musicRoot, cloudName, files, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
+provide(STORE, { api, server, device, engine, musicRoot, cloudName, where, files, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
 
 // ---- folders of the music root (the music that is not by followed artist yet) ----
 const folders = ref<{ path: string; name: string }[]>([])

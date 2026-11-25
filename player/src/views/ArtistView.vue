@@ -33,7 +33,7 @@
             </template>
             <button v-else class="rp-btn rp-primary" @click="editing = !editing">Seguir</button>
             <AddToPlaylist kind="artist" :id="page.id" :followed="!!page.follow" />
-            <button v-if="songs.length" class="rp-btn rp-danger" title="Borrar de tu nube todo lo suyo" @click="removeAll">
+            <button v-if="songs.length" class="rp-btn rp-danger" :title="`Borrar de ${where} todo lo suyo`" @click="removeAll">
               <i class="rp-i rp-i-delete" aria-hidden="true"></i> Borrar
             </button>
             <button v-if="deletable.length > 1 && !selecting" class="rp-btn" title="Elegir varios discos para borrarlos a la vez" @click="selecting = true">Seleccionar</button>
@@ -104,7 +104,7 @@
     <div v-if="askUnfollow" class="rp-modal" @click.self="askUnfollow = false">
       <div class="rp-dialog" role="dialog" aria-label="Dejar de seguir">
         <h2 class="rp-h2">¿Dejar de seguir a {{ page?.name }}?</h2>
-        <p>Lo que ya se ha bajado se queda en tu nube. Lo pendiente no se bajará y sus novedades tampoco.</p>
+        <p>Lo que ya se ha bajado se queda en {{ where }}. Lo pendiente no se bajará y sus novedades tampoco.</p>
         <div class="rp-rules-actions">
           <button class="rp-btn" @click="askUnfollow = false">Cancelar</button>
           <button class="rp-btn rp-primary" @click="unfollow">Dejar de seguir</button>
@@ -127,7 +127,7 @@ import AddToPlaylist from './AddToPlaylist.vue'
 import SelectionBar from './SelectionBar.vue'
 
 const props = defineProps<{ id: number }>()
-const { api, state, go, notify, refreshFollows, remove } = useStore()
+const { api, state, go, notify, refreshFollows, remove, where } = useStore()
 const page = ref<ArtistPage | null>(null)
 const error = ref('')
 const editing = ref(false)

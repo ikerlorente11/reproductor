@@ -11,7 +11,7 @@
     <p v-if="error" class="rp-banner rp-banner-error">{{ error }}</p>
     <p v-else-if="busy" class="rp-muted"><span class="rp-spin"></span> Buscando…</p>
     <p v-else-if="query.trim() && searched && !count" class="rp-muted">Nada con «{{ query.trim() }}» en el catálogo.</p>
-    <p v-else-if="!query.trim()" class="rp-muted">Busca en el catálogo de Deezer. Al seguir un artista, o añadir algo suyo a una lista, se baja su música a tu nube.</p>
+    <p v-else-if="!query.trim()" class="rp-muted">Busca en el catálogo de Deezer. Al seguir un artista, o añadir algo suyo a una lista, se baja su música a {{ where }}.</p>
 
     <h2 v-if="tab === 'all' && artists.length" class="rp-h2 rp-search-sec">Artistas <a v-if="artists.length > LIMIT.artists" href="#" class="rp-small rp-muted" @click.prevent="setTab('artists')">Ver todos</a></h2>
     <ul v-if="(tab === 'all' || tab === 'artists') && artists.length" class="rp-results">
@@ -84,7 +84,7 @@ const TABS: { value: Tab; label: string }[] = [
 ]
 
 const props = defineProps<{ q: string; tab?: string }>()
-const { api, state, go, notify, refreshFollows } = useStore()
+const { api, state, go, notify, refreshFollows, where } = useStore()
 const input = ref<HTMLInputElement>()
 const query = ref(props.q)
 const tab = ref<Tab>((TABS.some((t) => t.value === props.tab) ? props.tab : 'all') as Tab)

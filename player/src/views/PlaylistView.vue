@@ -61,7 +61,7 @@
             </span>
             <div v-if="choosing === e.id" class="rp-entry-releases">
               <p v-if="!artistReleases" class="rp-muted rp-small"><span class="rp-spin"></span> Cargando sus discos…</p>
-              <p v-else-if="!artistReleases.length" class="rp-muted rp-small">Aún no hay nada suyo en tu nube.</p>
+              <p v-else-if="!artistReleases.length" class="rp-muted rp-small">Aún no hay nada suyo en {{ where }}.</p>
               <template v-else>
                 <p class="rp-muted rp-small">
                   Desmarca lo que no quieras en la lista.<template v-if="e.new_too"> Lo que saque a partir de ahora entrará solo.</template>
@@ -117,7 +117,7 @@
     <div v-if="askDelete" class="rp-modal" @click.self="askDelete = false">
       <div class="rp-dialog" role="dialog" aria-label="Borrar lista">
         <h2 class="rp-h2">¿Borrar «{{ pl?.name }}»?</h2>
-        <p>Se borra la lista (también en Navidrome). La música se queda en tu nube.</p>
+        <p>Se borra la lista (también en Navidrome). La música se queda en {{ where }}.</p>
         <div class="rp-rules-actions">
           <button class="rp-btn" @click="askDelete = false">Cancelar</button>
           <button class="rp-btn rp-primary" @click="remove">Borrar</button>
@@ -136,7 +136,7 @@ import { useStore } from '../lib/store'
 
 const KIND = { song: 'Canción', release: 'Disco', artist: 'Artista', file: 'Archivo' }
 const props = defineProps<{ id: number }>()
-const { api, state, go, notify, refreshPlaylists } = useStore()
+const { api, state, go, notify, refreshPlaylists, where } = useStore()
 const pl = ref<Playlist | null>(null)
 const error = ref('')
 const renaming = ref(false)
