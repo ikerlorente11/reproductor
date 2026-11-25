@@ -122,6 +122,7 @@
     </aside>
 
     <main ref="mainEl" class="rp-main">
+      <HandoffBanner v-if="server" />
       <p v-if="state.error" class="rp-banner rp-banner-error">
         {{ state.error }} <button class="rp-btn rp-small" @click="connect()">Reintentar</button>
       </p>
@@ -180,6 +181,8 @@ import { Soundlift, soundliftState } from '../lib/soundlift'
 import { isAudioName, isBusy, libraryArtists, releaseSongs, type Song } from '../lib/library'
 import { nowPlaying, play, setResolver } from '../lib/player'
 import { control, startConnect, stopConnect, type Me } from '../lib/connect'
+import { startHandoff, stopHandoff } from '../lib/handoff'
+import HandoffBanner from './HandoffBanner.vue'
 import { STORE, createState, queryFromView, type Files, type RemoveRequest, type View } from '../lib/store'
 import '../lib/ui.css'
 import HomeView from './HomeView.vue'
@@ -405,7 +408,11 @@ async function connect() {
   try {
     await api.ensureConnected()
     state.connected = true
-    if (props.me) startConnect(api, props.me, notify, !!props.oneTab)
+    if (props.me) {
+      startConnect(api, props.me, notify, !!props.oneTab)
+      // what is listened to and where it was left, shared with the user's other devices
+      startHandoff(api, props.me)
+    }
   } catch (err: any) {
     state.error = `No se pudo conectar El Reproductor con ${where}: ${err?.message || err}`
     return
@@ -535,6 +542,7 @@ if (offline) {
 }
 onBeforeUnmount(() => {
   stopConnect()
+  stopHandoff()
   clearInterval(keepTimer)
   clearTimeout(poll)
   window.removeEventListener('keydown', onKey)

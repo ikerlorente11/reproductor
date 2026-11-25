@@ -34,6 +34,11 @@
         </div>
       </section>
 
+      <section v-if="listened.length" class="rp-section">
+        <h2 class="rp-h2">Escuchado hace poco</h2>
+        <SongList :songs="listened.slice(0, 6)" covers :extra="(_s, i) => whereAndWhen(plays[i])" />
+      </section>
+
       <section class="rp-section">
         <h2 class="rp-h2">Lo último en tu biblioteca</h2>
         <p v-if="loading" class="rp-muted"><span class="rp-spin"></span> Cargando…</p>
@@ -42,6 +47,11 @@
           <ReleaseCard v-for="r in recent" :key="r.release_id" :release="r" show-artist :badge="false"
                        @open="go({ v: 'release', id: albumOf(r) })" @play="playRelease(r)" />
         </div>
+      </section>
+
+      <section v-if="top.length" class="rp-section">
+        <h2 class="rp-h2">Lo que más escuchas</h2>
+        <SongList :songs="top.map((t) => t.song)" covers :extra="(_s, i) => `${top[i].count} ${top[i].count === 1 ? 'vez' : 'veces'}`" />
       </section>
 
       <section v-if="state.follows.length" class="rp-section">
@@ -66,11 +76,30 @@ import { albumOf, releaseSongs } from '../lib/library'
 import { play } from '../lib/player'
 import { useStore } from '../lib/store'
 import ReleaseCard from './ReleaseCard.vue'
+import SongList from './SongList.vue'
+import type { Song } from '../lib/library'
 
 const { api, state, go, notify, refreshFollows, where } = useStore()
 const recent = ref<Release[]>([])
 const failed = ref<Release[]>([])
 const loading = ref(true)
+/** what the user listened to lately and the most, on any of their devices (the server keeps it) */
+const plays = ref<{ song: Song; at: number; device: string }[]>([])
+const top = ref<{ song: Song; count: number }[]>([])
+const listened = computed(() => plays.value.map((p) => p.song))
+function whereAndWhen(p?: { at: number; device: string }) {
+  if (!p) return ''
+  const mins = Math.round((Date.now() / 1000 - p.at) / 60)
+  const when = mins < 60 ? `hace ${Math.max(1, mins)} min` : mins < 1440 ? `hace ${Math.round(mins / 60)} h` : new Date(p.at * 1000).toLocaleDateString('es')
+  return p.device ? `${when} · ${p.device.split(' · ')[0]}` : when
+}
+async function loadPlays() {
+  try {
+    const [p, t] = await Promise.all([api.plays(6), api.topPlays(6)])
+    plays.value = p
+    top.value = t.filter((x) => x.count > 1)
+  } catch (_) { /* an older server has no history: the sections just do not show */ }
+}
 const checking = ref(false)
 
 const greeting = computed(() => {
@@ -115,5 +144,5 @@ function playRelease(r: Release) {
 const doneCount = computed(() => state.downloads.recent.length + state.downloads.failed.length)
 watch(doneCount, load)
 watch(() => state.connected, load)
-onMounted(load)
+onMounted(() => { load(); loadPlays() })
 </script>

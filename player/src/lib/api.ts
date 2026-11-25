@@ -462,6 +462,19 @@ export class Api {
   }
   release(id: number) { return this.call<ReleaseDetail>(`/api/releases/${id}`) }
   downloads() { return this.call<Downloads>('/api/downloads') }
+  // ---- what the user listened to, on any of their devices, and where each device left its playback ----
+  addPlay(song: object, at: number, device: string) {
+    return this.call<{ at: number }>('/api/plays', { method: 'POST', body: JSON.stringify({ song, at, device }) })
+  }
+  plays(limit = 50) { return this.call<{ song: any; at: number; device: string }[]>(`/api/plays?limit=${limit}`) }
+  topPlays(limit = 20) { return this.call<{ song: any; at: number; count: number }[]>(`/api/plays/top?limit=${limit}`) }
+  putSession(deviceId: string, body: { name: string; kind: string; session: object; updated: number }) {
+    return this.call<{ kept: boolean }>(`/api/sessions/${encodeURIComponent(deviceId)}`, { method: 'PUT', body: JSON.stringify(body) })
+  }
+  sessions() {
+    return this.call<{ device: string; name: string; kind: string; updated: number; session: any }[]>('/api/sessions')
+  }
+
   /** Deezer's 30-second sample of a song. */
   async preview(trackId: number): Promise<Blob> {
     const res = await this.fetch(`${this.baseUrl}/api/songs/${trackId}/preview`, { headers: { Authorization: this.auth() } })

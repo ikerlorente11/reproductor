@@ -93,6 +93,13 @@ export function moveInList(id: string, from: number, to: number) {
 export function recordPlay(song: Song) {
   mine.history = [{ song: keep(song), at: Date.now() }, ...mine.history.filter((p, i) => i < HISTORY_MAX - 1)]
   mine.counts[song.key] = (mine.counts[song.key] || 0) + 1
+  for (const fn of played) fn(keep(song))
+}
+const played = new Set<(song: Song) => void>()
+/** Told of every song listened to (the server's history, connected); gives back how to stop. */
+export function onPlayed(fn: (song: Song) => void): () => void {
+  played.add(fn)
+  return () => { played.delete(fn) }
 }
 /** The last songs listened to, each once (the latest time). */
 export function recentSongs(limit = 50): Song[] {

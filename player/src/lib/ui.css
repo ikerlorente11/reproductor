@@ -697,3 +697,7 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 .rp-offline { display: inline-flex; align-items: center; gap: 10px; }
 .rp-btn.rp-on { color: var(--rp-accent-2); border-color: var(--rp-accent); }
 .rp-offline .rp-check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+/* ---- «Seguir escuchando» ---- */
+.rp-handoff { margin-bottom: 4px; }
+.rp-handoff .rp-mini { color: inherit; }
