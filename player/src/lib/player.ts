@@ -196,6 +196,40 @@ export function setVolume(v: number) {
   el().volume = v
   try { localStorage.setItem('reproductor.volume', String(v)) } catch (_) {}
 }
+/** Pause (nothing if already paused). */
+export function pause() {
+  if (audio && !audio.paused) audio.pause()
+}
+/** Play on (nothing if already playing). */
+export function resume() {
+  if (!state.playing) toggle()
+}
+
+/** A playback handed between devices (connect.ts): the queue, where in it and the second. */
+export interface Session { queue: Song[]; index: number; time: number; shuffle: boolean; repeat: boolean }
+
+/** The playback as it is now (the queue cut to `max` songs around the current one); null with nothing queued. */
+export function currentSession(max = 1000): Session | null {
+  if (state.index < 0 || !state.queue.length) return null
+  const from = Math.max(0, Math.min(state.index - max / 2, state.queue.length - max))
+  return { queue: state.queue.slice(from, from + max), index: state.index - from, time: Math.floor(state.time),
+           shuffle: state.shuffle, repeat: state.repeat }
+}
+
+/** Takes a playback from another device: its queue, from its song and second (playing, unless `play` is false). */
+export function startSession(s: Session, play = true) {
+  if (!s.queue[s.index]) return
+  seq++
+  state.queue = s.queue
+  state.shuffle = !!s.shuffle
+  if (state.repeat !== !!s.repeat) toggleRepeat()
+  state.index = s.index
+  state.time = resumeAt = Math.max(0, s.time || 0)
+  state.duration = s.queue[s.index].duration || 0
+  if (play) playAt(s.index)
+  else { if (audio) { audio.pause(); audio.removeAttribute('src') } saveSession() }
+}
+
 /** Leaving the app: silence, and give back the last song's URL. */
 export function stop() {
   seq++

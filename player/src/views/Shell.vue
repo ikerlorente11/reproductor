@@ -180,7 +180,8 @@ import type { DeviceLibrary } from '../lib/device'
 import { createList, mine } from '../lib/mine'
 import { Soundlift, soundliftState } from '../lib/soundlift'
 import { isAudioName, isBusy, libraryArtists, releaseSongs, type Song } from '../lib/library'
-import { nowPlaying, play, setResolver, toggle } from '../lib/player'
+import { nowPlaying, play, setResolver } from '../lib/player'
+import { control, startConnect, stopConnect, type Me } from '../lib/connect'
 import { STORE, createState, queryFromView, type Files, type RemoveRequest, type View } from '../lib/store'
 import '../lib/ui.css'
 import HomeView from './HomeView.vue'
@@ -227,6 +228,8 @@ const props = defineProps<{
   /** a link out of the app (the web: back to the cloud's files) */
   back?: { label: string; title?: string; go: () => void }
   playFile?: string
+  /** this device among the user's (connected to a server): pass the playback to another, bring it, control it */
+  me?: Me
 }>()
 
 const server = !!props.api
@@ -385,6 +388,7 @@ async function connect() {
   try {
     await api.ensureConnected()
     state.connected = true
+    if (props.me) startConnect(api, props.me, notify)
   } catch (err: any) {
     state.error = `No se pudo conectar El Reproductor con tu nube: ${err?.message || err}`
     return
@@ -496,7 +500,7 @@ function schedule() {
 function onKey(e: KeyboardEvent) {
   const target = e.target as HTMLElement
   if (target && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)) return
-  if (e.code === 'Space') { e.preventDefault(); toggle() }
+  if (e.code === 'Space') { e.preventDefault(); control.toggle() }
 }
 
 onMounted(() => {
@@ -506,6 +510,7 @@ onMounted(() => {
   window.addEventListener('keydown', onKey)
 })
 onBeforeUnmount(() => {
+  stopConnect()
   clearTimeout(poll)
   window.removeEventListener('keydown', onKey)
 })

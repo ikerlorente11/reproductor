@@ -518,3 +518,30 @@ a.rp-strip:hover { filter: brightness(.97); }
 .rp-center { text-align: center; }
 .rp-page-head select.rp-input { padding: 7px 10px; border-radius: 999px; font-size: 13px; }
 .rp-back.on { color: var(--rp-accent-2) !important; background: var(--rp-surface-2); }
+
+/* ---- the user's devices (as Spotify Connect: connect.ts, DevicePicker.vue) ---- */
+.rp-i-devices { --rp-i: url('/icons/device-line.svg'); }
+.rp-i-computer { --rp-i: url('/icons/computer-line.svg'); }
+.rp-i-phone { --rp-i: url('/icons/smartphone-line.svg'); }
+.rp-i-web { --rp-i: url('/icons/global-line.svg'); }
+.rp-i-check { --rp-i: url('/icons/check-line.svg'); }
+.rp-devices .rp-pbtn { position: relative; }
+.rp-devcount { position: absolute; right: -2px; top: -2px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; font-size: 9.5px;
+  line-height: 15px; font-weight: 750; background: var(--rp-accent); color: var(--rp-on-accent); }
+.rp-menu.rp-devmenu { width: min(330px, calc(100vw - 32px)); max-height: min(460px, 70vh); }
+.rp-dev { display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border: 0; border-radius: 10px; background: transparent; color: inherit;
+  font: inherit; font-size: 13px; text-align: left; width: 100%; }
+button.rp-dev { cursor: pointer; }
+button.rp-dev:hover { background: var(--rp-surface-2); }
+.rp-dev > .rp-i { width: 20px; height: 20px; margin-top: 1px; }
+.rp-dev.on { color: var(--rp-accent-2); }
+.rp-dev.on .rp-dev-text small { color: var(--rp-accent-2); }
+.rp-dev-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.rp-dev-text > span:first-child { font-weight: 650; }
+.rp-dev-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.rp-dev-actions .rp-btn { padding: 4px 10px; }
+.rp-dev-far { background: var(--rp-surface-2); margin-top: 4px; }
+/* the bar driving another device: what plays there, with a strip that says where */
+.rp-pconnect { grid-column: 1 / -1; order: 10; margin: -4px -18px -10px; padding: 4px 18px; font-size: 12px; font-weight: 650;
+  background: var(--rp-accent); color: var(--rp-on-accent); display: flex; align-items: center; gap: 6px; }
+.rp-pconnect .rp-i { width: 14px; height: 14px; }

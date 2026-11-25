@@ -289,6 +289,32 @@ export interface Lyrics {
   offset: number
 }
 
+export type DeviceKind = 'web' | 'desktop' | 'android'
+/** What a device plays, as it tells the others (`time` at the moment it told: see DeviceInfo.age). */
+export interface RemoteState {
+  song: { key: string; title: string; artist: string; album: string; cover: string | null; duration: number } | null
+  index: number
+  length: number
+  playing: boolean
+  time: number
+  duration: number
+  volume: number
+  shuffle: boolean
+  repeat: boolean
+}
+export interface DeviceInfo {
+  id: string
+  name: string
+  kind: DeviceKind
+  /** the device asking */
+  me: boolean
+  online: boolean
+  state: RemoteState | null
+  /** seconds since it told its state */
+  age: number
+}
+export interface DeviceCommand { seq: number; from: string; type: string; data: Record<string, any> }
+
 /** Gives the Authorization header of each call (it may change: a web session renews its token). */
 export type Auth = () => string
 
@@ -369,6 +395,22 @@ export class Api {
   downloadDeezerPlaylist(id: number) { return this.call<{ asked: number }>(`/api/deezer/playlists/${id}/download`, { method: 'POST' }) }
   saveDeezerPlaylist(id: number) { return this.call<Playlist>(`/api/deezer/playlists/${id}/save`, { method: 'POST', body: '{}' }) }
   downloadSong(trackId: number) { return this.call<Release>(`/api/songs/${trackId}/download`, { method: 'POST' }) }
+
+  // ---- the user's devices, as Spotify Connect (connect.ts) ----
+  devices(me: string) { return this.call<DeviceInfo[]>(`/api/devices?me=${encodeURIComponent(me)}`) }
+  putDevice(id: string, body: { name: string; kind: DeviceKind; state: RemoteState | null }) {
+    return this.call<DeviceInfo[]>(`/api/devices/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+  }
+  deviceEvents(id: string, since: number, wait: number) {
+    return this.call<{ seq: number; commands: DeviceCommand[]; devices: DeviceInfo[] }>(`/api/devices/${id}/events?since=${since}&wait=${wait}`)
+  }
+  deviceCommand(target: string, sender: string, type: string, data: Record<string, unknown> = {}) {
+    return this.call<{ sent: string }>(`/api/devices/${target}/commands`, { method: 'POST', body: JSON.stringify({ sender, type, data }) })
+  }
+  /** Leaving (the page closes): the others stop listing it at once. */
+  leaveDevice(id: string) {
+    fetch(`${this.baseUrl}/api/devices/${id}`, { method: 'DELETE', keepalive: true, headers: { Authorization: this.auth() } }).catch(() => {})
+  }
 
   playlists() { return this.call<PlaylistSummary[]>('/api/playlists') }
   playlist(id: number) { return this.call<Playlist>(`/api/playlists/${id}`) }
