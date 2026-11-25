@@ -136,7 +136,9 @@
       <p v-if="state.error" class="rp-banner rp-banner-error">
         {{ state.error }} <button class="rp-btn rp-small" @click="connect()">Reintentar</button>
       </p>
-      <template v-if="view.v === 'home'"><HomeView v-if="server" /><DeviceHomeView v-else-if="device" /></template>
+      <!-- the lyrics (from the player's bar) take the page's place until closed or another page is opened -->
+      <LyricsPanel v-if="lyricsOpen && !phone" class="rp-lyrics-page" @close="lyricsOpen = false" />
+      <template v-else-if="view.v === 'home'"><HomeView v-if="server" /><DeviceHomeView v-else-if="device" /></template>
       <template v-else-if="view.v === 'search'">
         <template v-if="server"><SearchView :q="view.q || ''" :tab="view.tab" /><DeviceSearchView v-if="device && view.q" :q="view.q" embedded /></template>
         <DeviceSearchView v-else-if="device" :q="view.q || ''" />
@@ -223,7 +225,8 @@ import DeviceHomeView from './DeviceHomeView.vue'
 import DeviceSearchView from './DeviceSearchView.vue'
 import MyListView from './MyListView.vue'
 import LibraryPage from './LibraryPage.vue'
-import { isPhone as phone } from '../lib/phone'
+import { isPhone as phone, lyricsOpen } from '../lib/phone'
+import LyricsPanel from './LyricsPanel.vue'
 import DeviceDownloadView from './DeviceDownloadView.vue'
 
 /**
@@ -283,7 +286,7 @@ let toastTimer: any = null
 
 const view = computed<View>(() => props.view)
 function go(next: View, replace = false) { props.navigate(next, replace) }
-watch(() => JSON.stringify(view.value), () => mainEl.value?.scrollTo({ top: 0 }))
+watch(() => JSON.stringify(view.value), () => { mainEl.value?.scrollTo({ top: 0 }); if (!phone.value) lyricsOpen.value = false })
 
 function notify(text: string, error = false) {
   toast.text = text

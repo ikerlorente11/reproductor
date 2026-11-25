@@ -843,3 +843,23 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 /* «En este equipo» under the server's search: a section of the page, with its margins */
 .rp-main > .rp-section { padding: 0 24px 40px; display: grid; gap: 16px; }
 .rp-phone .rp-main > .rp-section { padding: 0 16px 28px; }
+
+/* the lyrics in the page's place (a wide screen), and in the cover's place in a phone's player */
+.rp-lyrics.rp-lyrics-page { position: static; width: auto; height: 100%; min-height: 100%; border: 0; border-radius: 0; box-shadow: none; padding: 18px 24px 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rp-accent) 22%, var(--rp-surface)) 0%, var(--rp-surface) 70%); }
+.rp-lyrics-page .rp-lyrics-body { padding: 12% 10%; }
+.rp-lyrics-page .rp-lyrics-lines li { font-size: clamp(22px, 2.6vw, 34px); }
+.rp-full-art.rp-full-lyrics { align-items: stretch; padding: 0; }
+.rp-full-lyrics .rp-lyrics { position: static; width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; padding: 0; background: transparent; color: #fff; }
+.rp-full-lyrics .rp-lyrics-head { grid-template-columns: minmax(0, 1fr) auto; }
+.rp-full-lyrics .rp-lyrics-cover, .rp-full-lyrics .rp-lyrics-title strong, .rp-full-lyrics .rp-lyrics-title small:not(.rp-lyrics-kicker) { display: none; }
+.rp-full-lyrics .rp-lyrics-kicker { color: rgba(255,255,255,.8) !important; }
+.rp-full-lyrics .rp-lyrics-body { padding: 18% 2%; -webkit-mask: linear-gradient(transparent, #000 12%, #000 88%, transparent); mask: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
+.rp-full-lyrics .rp-lyrics-lines li { font-size: 22px; color: rgba(255,255,255,.5); }
+.rp-full-lyrics .rp-lyrics-lines li.past { color: rgba(255,255,255,.75); opacity: 1; }
+.rp-full-lyrics .rp-lyrics-lines li.on { color: #fff; }
+.rp-full-lyrics .rp-muted, .rp-full-lyrics .rp-lyrics-src { color: rgba(255,255,255,.65); }
+.rp-full-lyrics .rp-btn, .rp-full-lyrics .rp-mini { color: #fff; border-color: rgba(255,255,255,.35); background: transparent; }
+.rp-full-lyrics .rp-lyrics-adjust { border-top-color: rgba(255,255,255,.2); }
+.rp-full-lyrics .rp-lyrics-offset { color: #fff; }
+.rp-full-lyrics .rp-lyrics-head { border-bottom: 0; padding-bottom: 0; }

@@ -30,8 +30,9 @@
         <button v-if="!far" class="rp-iconbtn" aria-label="Cola" @click="showQueue = true; showLyrics = false"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
         <span v-else class="rp-iconbtn"></span>
       </header>
-      <div class="rp-full-art">
-        <img v-if="shown.cover" :src="shown.cover" alt="" />
+      <div :class="['rp-full-art', { 'rp-full-lyrics': showLyrics && !far }]">
+        <LyricsPanel v-if="showLyrics && !far" @close="showLyrics = false" />
+        <img v-else-if="shown.cover" :src="shown.cover" alt="" />
         <span v-else class="rp-cover-none"><i class="rp-i rp-i-album" aria-hidden="true"></i></span>
       </div>
       <div class="rp-full-meta">
@@ -64,7 +65,6 @@
         <button v-if="!far" :class="['rp-fbtn', { on: showLyrics }]" aria-label="Letra" @click="showLyrics = !showLyrics; showQueue = false"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
       </div>
       <p v-if="player.error && !far" class="rp-perror">{{ player.error }}</p>
-      <LyricsPanel v-if="showLyrics && !far" class="rp-sheet" @close="showLyrics = false" />
       <aside v-if="showQueue && !far" class="rp-queue rp-sheet" aria-label="Cola">
         <header class="rp-queue-head"><strong>Cola</strong><span class="rp-muted rp-small">{{ player.index + 1 }} de {{ player.queue.length }}</span>
           <span class="rp-grow"></span><button class="rp-mini" title="Cerrar" @click="showQueue = false"><i class="rp-i rp-i-close" aria-hidden="true"></i></button></header>
@@ -135,7 +135,6 @@
     </div>
     <p v-if="player.error && !far" class="rp-perror">{{ player.error }}</p>
 
-    <LyricsPanel v-if="showLyrics && !far" @close="showLyrics = false" />
     <aside v-if="showQueue && !far" class="rp-queue" aria-label="Cola">
       <header class="rp-queue-head"><strong>Cola</strong><span class="rp-muted rp-small">{{ player.index + 1 }} de {{ player.queue.length }}</span>
         <span class="rp-grow"></span><button class="rp-mini" title="Cerrar" @click="showQueue = false"><i class="rp-i rp-i-close" aria-hidden="true"></i></button></header>
@@ -153,7 +152,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { coverColor } from '../lib/cover-color'
-import { isPhone as phone } from '../lib/phone'
+import { isPhone as phone, lyricsOpen } from '../lib/phone'
 import { fmtTime } from '../lib/library'
 import { connect, control, controlled, remote } from '../lib/connect'
 import { hasNext, hasPrev, jump, nowPlaying as song, player, removeAt } from '../lib/player'
@@ -174,7 +173,8 @@ const view = computed(() => {
   return { playing: player.playing, loading: player.loading, time: player.time, duration: player.duration, shuffle: player.shuffle,
            repeat: player.repeat, volume: player.volume }
 })
-const showLyrics = ref(false)
+/** shared with the Shell, which shows them in the page's place on a wide screen */
+const showLyrics = lyricsOpen
 /** Where the title leads: the album the song is on (a loose song's own row is not a page). */
 const albumOfSong = computed(() => song.value?.albumId || (song.value?.releaseId && song.value.releaseId > 0 ? song.value.releaseId : 0))
 /** Where the title and the artist lead: a song of this device to its pages here, a cloud one to the server's. */
@@ -241,7 +241,7 @@ function goFromFull(v: View) {
 }
 // a swipe down closes it
 let swipeY: number | null = null
-function swipeStart(e: TouchEvent) { swipeY = showLyrics.value || showQueue.value ? null : e.touches[0].clientY }
+function swipeStart(e: TouchEvent) { swipeY = showQueue.value || (e.target as HTMLElement)?.closest?.('.rp-lyrics') ? null : e.touches[0].clientY }
 function swipeEnd(e: TouchEvent) {
   if (swipeY !== null && e.changedTouches[0].clientY - swipeY > 110) closeFull()
   swipeY = null

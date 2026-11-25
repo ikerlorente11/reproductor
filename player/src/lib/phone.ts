@@ -2,6 +2,9 @@
  *  bottom, the player as a bar over them that opens to the whole screen — instead of the sidebar and bottom bar. */
 import { ref } from 'vue'
 
+/** The lyrics are open: on a wide screen they take the place of the page, on a phone's player that of the cover. */
+export const lyricsOpen = ref(false)
+
 const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 760px)') : null
 export const isPhone = ref(!!query?.matches)
 query?.addEventListener?.('change', (e) => { isPhone.value = e.matches })
