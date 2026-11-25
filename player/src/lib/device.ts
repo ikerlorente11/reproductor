@@ -228,7 +228,8 @@ export class DeviceLibrary {
 
   constructor(backend: DeviceBackend) {
     this.backend = backend
-    backend.onProgress((p) => { this.state.progress = p; this.state.scanning = p.done < p.total || p.total === 0 })
+    // reading again: the last read's error (say, no permission yet) no longer holds
+    backend.onProgress((p) => { this.state.progress = p; this.state.scanning = p.done < p.total || p.total === 0; if (p.done > 0) this.state.error = '' })
     backend.onChanged((error) => { this.state.error = error || ''; this.load() })
   }
 
