@@ -1,0 +1,34 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.ikerlorente11.reproductor.host'
+version = '0.1.0'
+
+android {
+  namespace "com.ikerlorente11.reproductor.host"
+  defaultConfig {
+    // keep rules for the app's release build (R8), see consumer-rules.pro
+    consumerProguardFiles 'consumer-rules.pro'
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // the local server the web view talks to (the page, this device's music, the cloud, the sound)
+  implementation 'org.nanohttpd:nanohttpd:2.3.1'
+  // requests to any server for the page and to the cloud's WebDAV: the OkHttp React Native already ships
+  implementation 'com.squareup.okhttp3:okhttp:4.9.2'
+  // the passwords, encrypted with a key of the Android keystore
+  implementation 'androidx.security:security-crypto:1.1.0'
+  // the sound: Android's player in a media service (notification, lock screen, screen off)
+  implementation 'androidx.media3:media3-exoplayer:1.8.0'
+  implementation 'androidx.media3:media3-session:1.8.0'
+
+  testImplementation 'junit:junit:4.13.2'
+}

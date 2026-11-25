@@ -1,0 +1,206 @@
+/** The page's side of the host (modules/reproductor-host, HostServer.kt): the local server the app serves this page
+ * from. Everything goes over HTTP on 127.0.0.1 with the token the app put in the URL (`?t=`), kept for the session. */
+import type { AudioOutput, DeviceBackend, DeviceTrack, Listing, OfflineBackend, OutputEvents, OutputItem } from 'reproductor-player'
+
+const TOKEN_KEY = 'reproductor.host.token'
+const BASE_KEY = 'reproductor.host.base'
+function remembered(key: string, param: string): string {
+  const given = new URLSearchParams(window.location.search).get(param)
+  if (given !== null) { try { sessionStorage.setItem(key, given) } catch (_) {} return given }
+  try { return sessionStorage.getItem(key) || '' } catch (_) { return '' }
+}
+export const TOKEN: string = remembered(TOKEN_KEY, 't')
+/** Where the host is: '' (this page's own origin), or another origin in development, when the page comes from Vite on
+ * the PC and the host runs on the phone (`?host=http://127.0.0.1:48143`). */
+export const HOST_BASE: string = remembered(BASE_KEY, 'host').replace(/\/+$/, '')
+
+export interface HostInfo {
+  version: string
+  /** what the person calls this phone (or its model) */
+  device: string
+  /** the permission to read the music was given */
+  library: boolean
+  /** the app's music folder (the cloud's songs kept on the phone) */
+  music: string
+}
+
+/** A URL of the host with the token, absolute (the native player gets it too). */
+export function hostUrl(path: string): string {
+  return new URL(`${HOST_BASE}${path}${path.includes('?') ? '&' : '?'}t=${TOKEN}`, location.href).href
+}
+
+export async function host<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(HOST_BASE + path, { ...init, headers: { 'X-Host-Token': TOKEN, 'Content-Type': 'application/json', ...((init.headers as any) || {}) } })
+  if (!res.ok) {
+    const detail = await res.json().then((b) => b.detail).catch(() => res.statusText)
+    const err: any = new Error(typeof detail === 'string' ? detail : res.statusText)
+    err.status = res.status
+    throw err
+  }
+  const text = await res.text()
+  return (text ? JSON.parse(text) : null) as T
+}
+const post = <T>(path: string, body: unknown = {}) => host<T>(path, { method: 'POST', body: JSON.stringify(body) })
+
+export const info = () => host<HostInfo>('/host/info')
+
+/** The app (React Native) listens for these: open-url goes to the browser, permission asks for the music again. */
+export function tellApp(message: Record<string, unknown>): void {
+  const rn = (window as any).ReactNativeWebView
+  if (rn?.postMessage) rn.postMessage(JSON.stringify(message))
+}
+
+// ---- what happens on the host, as it happens ----
+type Listener = (event: any) => void
+const listeners = new Set<Listener>()
+const reopened = new Set<() => void>()
+let source: EventSource | null = null
+/** `onOpen`: the stream (re)connected, so what happened meanwhile may have been missed */
+export function onHostEvent(listener: Listener, onOpen?: () => void): () => void {
+  listeners.add(listener)
+  if (onOpen) reopened.add(onOpen)
+  if (!source) {
+    source = new EventSource(hostUrl('/host/events'))
+    source.onmessage = (e) => {
+      let data: any
+      try { data = JSON.parse(e.data) } catch (_) { return }
+      for (const l of listeners) l(data)
+    }
+    source.onopen = () => { for (const f of reopened) f() }
+  }
+  return () => { listeners.delete(listener); if (onOpen) reopened.delete(onOpen) }
+}
+
+// ---- the page's settings and secrets, kept by the app ----
+export const prefs = {
+  all: () => host<Record<string, string>>('/host/prefs'),
+  set: (values: Record<string, string | null>) => host<Record<string, string>>('/host/prefs', { method: 'PUT', body: JSON.stringify(values) })
+}
+export const secrets = {
+  get: (key: string) => host<{ value: string | null }>(`/host/secret?key=${encodeURIComponent(key)}`).then((r) => r?.value ?? null),
+  set: async (key: string, value: string) => { await host<void>(`/host/secret?key=${encodeURIComponent(key)}`, { method: 'PUT', body: JSON.stringify({ value }) }) },
+  delete: async (key: string) => { await host<void>(`/host/secret?key=${encodeURIComponent(key)}`, { method: 'DELETE' }) }
+}
+
+// ---- any server, reached through the host: no CORS ----
+/** A header value carries only Latin-1: the JSON of the headers goes with everything else escaped (\uXXXX). */
+function headerJson(headers: Record<string, string>): string {
+  return JSON.stringify(headers).replace(/[\u007f-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
+}
+
+/** `fetch` as the page's code uses it (the service, soundlift, Subsonic, LRCLIB…), made by the host: the server's own
+ * answer comes back (status, type, body); when it cannot be reached it rejects, like the browser's. */
+export const hostFetch: typeof fetch = async (input, init = {}) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  const given: Record<string, string> = {}
+  new Headers(init.headers || (input instanceof Request ? input.headers : undefined)).forEach((v, k) => { given[k] = v })
+  const headers: Record<string, string> = { 'X-Host-Token': TOKEN, 'X-Fetch-Headers': headerJson(given) }
+  if (init.body !== undefined && init.body !== null) headers['Content-Type'] = given['content-type'] || 'text/plain;charset=UTF-8'
+  const res = await fetch(`${HOST_BASE}/host/fetch?url=${encodeURIComponent(new URL(url, location.href).href)}`, {
+    method: (init.method || 'GET').toUpperCase(), headers, body: init.body, signal: init.signal
+  })
+  const final = res.headers.get('X-Fetch-Url')
+  if (!final) {     // the host's own answer, not the server's: the address was refused or not reached
+    const detail = await res.json().then((b) => b.detail).catch(() => null)
+    throw new TypeError(typeof detail === 'string' ? detail : `No se pudo pedir ${url} (${res.status})`)
+  }
+  try { Object.defineProperty(res, 'url', { value: final }) } catch (_) {}
+  return res
+}
+
+// ---- this phone's music (Android's media index, read by the host) ----
+export function androidDevice(): DeviceBackend {
+  return {
+    get: () => host<{ roots: string[]; tracks: DeviceTrack[]; scanning: boolean }>('/host/library'),
+    scan: () => post<void>('/host/library/scan'),
+    // there is no folder to choose (Android's index has all the music): the folders left out come back
+    addRoot: async () => (await post<{ shown: boolean }>('/host/library/show')).shown,
+    removeRoot: (path) => post<void>('/host/library/hide', { path }),
+    async lyrics(id) {
+      const res = await fetch(hostUrl(`/l/${encodeURIComponent(id)}`))
+      return res.ok ? res.text() : null
+    },
+    fileUrl: (id) => hostUrl(`/f/${encodeURIComponent(id)}`),
+    coverUrl: (cover) => hostUrl(`/c/${encodeURIComponent(cover)}`),
+    onProgress: (fn) => onHostEvent((e) => { if (e.type === 'library-progress') fn({ done: e.done, total: e.total }) }),
+    onChanged: (fn) => onHostEvent((e) => { if (e.type === 'library-changed') fn(e.error ?? null) })
+  }
+}
+
+/** A song another app opened with El Reproductor, as a track (of the library, or one apart). */
+export const openUri = (uri: string) => post<DeviceTrack>('/host/library/open', { uri })
+
+// ---- the cloud of the server connected ----
+export const cloud = {
+  set: (c: { webdav: string; user: string; password: string } | null) =>
+    c ? host<void>('/host/cloud', { method: 'PUT', body: JSON.stringify(c) }) : host<void>('/host/cloud', { method: 'DELETE' }),
+  list: (dir: string) => post<Listing>('/host/cloud/list', { dir }),
+  remove: (path: string) => post<void>('/host/cloud/remove', { path }),
+  /** where a song of the cloud plays from (its copy on the phone when there is one) */
+  url: (path: string) => hostUrl('/w' + path.split('/').map(encodeURIComponent).join('/'))
+}
+
+export function androidOffline(): OfflineBackend {
+  return {
+    have: (paths) => post<string[]>('/host/offline/have', { paths }),
+    get: (paths) => post<void>('/host/offline/get', { paths }),
+    remove: (paths) => post<void>('/host/offline/remove', { paths }),
+    onProgress: (fn) => onHostEvent((e) => { if (e.type === 'offline-progress') fn(e) })
+  }
+}
+
+// ---- the sound: Android's player (it goes on with the screen off; see Playback.kt) ----
+export function nativeOutput(): AudioOutput {
+  let paused = true
+  let time = 0
+  let loaded = false
+  let on: OutputEvents | null = null
+  const cmd = (body: Record<string, unknown>) =>
+    post<{ loaded: boolean; key?: string | null; t?: number; d?: number; playing?: boolean; ended?: boolean }>('/host/audio', body)
+  const absolute = (it: OutputItem): OutputItem => ({ ...it, url: it.url ? new URL(it.url, location.href).href : '',
+                                                       cover: it.cover ? new URL(it.cover, location.href).href : null })
+  /** What the player did while this page slept (or before it was loaded again): its song, its second, whether it plays. */
+  async function resync() {
+    if (!on) return
+    try {
+      const s = await cmd({ op: 'state' })
+      if (!s.loaded) return
+      loaded = true
+      if (s.key) on.moved?.(s.key)
+      if (s.d) on.duration(s.d)
+      if (typeof s.t === 'number') { time = s.t; on.time(s.t) }
+      if (s.playing && paused) { paused = false; on.play() } else if (!s.playing && !paused) { paused = true; on.pause() }
+    } catch (_) {}
+  }
+  onHostEvent((e) => {
+    if (e.type !== 'audio' || !on) return
+    switch (e.ev) {
+      case 'time': time = e.t; on.time(e.t); break
+      case 'duration': on.duration(e.d); break
+      case 'play': if (paused) { paused = false; on.play() } break
+      case 'pause': if (typeof e.t === 'number') time = e.t; if (!paused) { paused = true; on.pause() } break
+      case 'ended': paused = true; on.ended(); break
+      case 'moved': on.moved?.(e.key); break
+      case 'error': on.error?.(e.message); break
+    }
+  }, resync)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resync() })
+  return {
+    continuous: true,
+    async load(items, index, from) {
+      loaded = true
+      time = from
+      await cmd({ op: 'load', items: items.map(absolute), index, from })
+    },
+    window(items, index) { cmd({ op: 'window', items: items.map(absolute), index }).catch(() => {}) },
+    async play() { await cmd({ op: 'play' }) },
+    pause() { cmd({ op: 'pause' }).catch(() => {}) },
+    seek(t) { time = t; cmd({ op: 'seek', t }).catch(() => {}) },
+    setVolume(v) { cmd({ op: 'volume', v }).catch(() => {}) },
+    clear() { loaded = false; paused = true; cmd({ op: 'clear' }).catch(() => {}) },
+    get paused() { return paused },
+    get currentTime() { return time },
+    get loaded() { return loaded },
+    listen(events) { on = events; resync() }
+  }
+}

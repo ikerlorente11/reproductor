@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "El Reproductor",
+    "slug": "reproductor",
+    "version": "0.1.0",
+    "orientation": "default",
+    "scheme": "reproductor",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.ikerlorente11.reproductor",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1fb866"
+      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.WAKE_LOCK",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": ["DEFAULT", "BROWSABLE"],
+          "data": [
+            { "scheme": "content" },
+            { "scheme": "file" },
+            { "mimeType": "audio/*" },
+            { "mimeType": "application/ogg" },
+            { "mimeType": "application/x-flac" }
+          ]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-dev-client",
+      ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#fafafc",
+          "dark": { "image": "./assets/splash-icon.png", "backgroundColor": "#141417" }
+        }
+      ],
+      "expo-status-bar"
+    ],
+    "runtimeVersion": { "policy": "appVersion" },
+    "owner": "ikerlorente11"
+  }
+}

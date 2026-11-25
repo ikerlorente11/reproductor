@@ -1,0 +1,18 @@
+node_modules/
+.expo/
+dist/
+/android/
+/ios/
+web/node_modules/
+# the page is built into the host module's assets (npm run web:build)
+modules/reproductor-host/android/src/main/assets/web/
+modules/reproductor-host/android/build/
+# the page packed for EAS Update (npm run web:build makes it)
+assets/web.zip
+*.jks
+*.log
+*.apk
+*.aab
+credentials.json
+credentials/
+.env*.local
