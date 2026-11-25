@@ -49,25 +49,27 @@ export function startHandoff(api: Api, me: Me) {
   }))
   flush()
 
-  // ---- this device's playback: when the queue or the song changes, every 30 s while playing, and on pausing ----
+  // ---- this device's playback: when the queue or the song changes, every 30 s while playing, and on pausing or
+  // leaving. It says when the user last really used it (`active`), not when it is sent: closing the app is no listening.
   let told = ''
+  let active = mineAt()
   const tell = async (force = false) => {
     const s = currentSession()
-    if (!s) return
-    const now = Date.now() / 1000
-    const mark = `${s.queue.length}|${s.queue[s.index]?.key}|${s.index}`
+    if (!s || !active) return
+    const mark = `${s.queue.length}|${s.queue[s.index]?.key}|${s.index}|${Math.round(active)}`
     if (!force && mark === told) return
     told = mark
     try {
-      localStorage.setItem(MINE, String(now))
-      await api.putSession(me.id, { name: me.name, kind: me.kind, session: s, updated: now })
+      localStorage.setItem(MINE, String(active))
+      await api.putSession(me.id, { name: me.name, kind: me.kind, session: s, updated: active })
     } catch (_) { told = '' }
   }
-  stops.push(watch(() => [player.queue, player.index], () => { tell() }))
-  stops.push(watch(() => player.playing, (on) => { if (!on) tell(true) }))
-  const beat = setInterval(() => { if (player.playing) tell(true) }, 30000)
+  const used = () => { active = Date.now() / 1000; handoff.offer = null }
+  stops.push(watch(() => [player.queue, player.index], () => { used(); tell() }))
+  stops.push(watch(() => player.playing, (on) => { if (on) used(); else tell(true) }))
+  const beat = setInterval(() => { if (player.playing) { used(); tell(true) } }, 30000)
   stops.push(() => clearInterval(beat))
-  const leave = () => { tell(true) }
+  const leave = () => { if (player.playing) used(); tell(true) }
   window.addEventListener('pagehide', leave)
   stops.push(() => window.removeEventListener('pagehide', leave))
 
