@@ -29,8 +29,7 @@ let seq = -1
 let generation = 0
 let notice: (text: string, error?: boolean) => void = () => {}
 
-/** This device's id: made once and kept. The apps keep it for good (`localStorage`); the web, per tab
- *  (`sessionStorage`: it survives a reload, and two tabs are two devices, not one obeying twice). */
+/** This device's id: made once and kept for good (the web: one per browser, whatever its tabs; see `oneTab`). */
 export function deviceId(store: Storage = localStorage, key = 'reproductor.device'): string {
   try {
     const known = store.getItem(key)
@@ -43,12 +42,12 @@ export function deviceId(store: Storage = localStorage, key = 'reproductor.devic
   }
 }
 
-/** "Chrome en Windows" (the web's name among the devices). */
+/** "Web · Chrome en Windows" (the web's name among the devices). */
 export function browserName(): string {
   const ua = navigator.userAgent
   const browser = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Navegador'
   const os = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Mac OS X/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : ''
-  return os ? `${browser} en ${os}` : browser
+  return `Web · ${os ? `${browser} en ${os}` : browser}`
 }
 
 // ---- what this device plays, told to the others ----
@@ -128,9 +127,27 @@ async function listen(mine: number) {
 let stopWatch: (() => void) | null = null
 let ticker: any = null
 let beat: any = null
-/** Joins the user's devices (once connected to the service). `say`: how the app shows a word to the user. */
-export function startConnect(withApi: Api, me: Me, say?: (text: string, error?: boolean) => void) {
+let releaseTab: (() => void) | null = null
+/**
+ * Joins the user's devices (once connected to the service). `say`: how the app shows a word to the user.
+ * `oneTab` (the web): the browser is one device however many tabs it has open; only one of them stands for it (the
+ * first, holding a lock of the browser's), and when it closes the next one takes over. The others play on their own.
+ */
+export function startConnect(withApi: Api, me: Me, say?: (text: string, error?: boolean) => void, oneTab = false) {
   stopConnect()
+  const locks = typeof navigator !== 'undefined' ? (navigator as any).locks : null
+  if (oneTab && locks) {
+    const mine = generation
+    locks.request(`reproductor.device.${me.id}`, () => new Promise<void>((release) => {
+      if (mine !== generation) return release()   // stopped while it waited for its turn
+      join(withApi, me, say)
+      releaseTab = release
+    })).catch(() => {})
+    return
+  }
+  join(withApi, me, say)
+}
+function join(withApi: Api, me: Me, say?: (text: string, error?: boolean) => void) {
   api = withApi
   connect.me = me
   connect.on = true
@@ -154,6 +171,8 @@ export function startConnect(withApi: Api, me: Me, say?: (text: string, error?: 
 function leave() { if (api && connect.me) api.leaveDevice(connect.me.id) }
 export function stopConnect() {
   generation++
+  releaseTab?.()
+  releaseTab = null
   stopWatch?.()
   stopWatch = null
   clearInterval(ticker)
