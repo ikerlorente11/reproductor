@@ -141,6 +141,26 @@ export interface Unplaced {
   query: string
 }
 
+/** Everyone on a song, as Deezer says: its main artists first, then who features on it. */
+export interface SongArtist { id: number; name: string; role: 'main' | 'featured'; picture: string | null }
+/** A song with everything Deezer knows of it (the player's ⓘ). */
+export interface SongInfo {
+  id: number
+  title: string
+  /** «Remix», «Live»… */
+  version: string
+  duration: number
+  isrc: string | null
+  date: string
+  bpm: number | null
+  explicit: boolean
+  track_position: number | null
+  disk_number: number | null
+  link: string
+  artists: SongArtist[]
+  album: { id: number; title: string; cover: string | null; kind: string; date: string; tracks: number | null; label: string; genres: string[]; artist_name: string } | null
+}
+
 export interface AlbumPage {
   id: number
   title: string
@@ -412,6 +432,8 @@ export class Api {
   deezerPlaylist(id: number) { return this.call<DeezerPlaylistPage>(`/api/deezer/playlists/${id}`) }
   downloadDeezerPlaylist(id: number) { return this.call<{ asked: number }>(`/api/deezer/playlists/${id}/download`, { method: 'POST' }) }
   saveDeezerPlaylist(id: number) { return this.call<Playlist>(`/api/deezer/playlists/${id}/save`, { method: 'POST', body: '{}' }) }
+  /** Everything of a song: its artists (who features on it too), its album, date, BPM… (404 on a server too old) */
+  songInfo(trackId: number) { return this.call<SongInfo>(`/api/songs/${trackId}/info`) }
   downloadSong(trackId: number) { return this.call<Release>(`/api/songs/${trackId}/download`, { method: 'POST' }) }
 
   // ---- the user's devices, as Spotify Connect (connect.ts) ----

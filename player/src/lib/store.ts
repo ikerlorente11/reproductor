@@ -10,6 +10,9 @@ import type { View } from './views.ts'
 
 export { queryFromView, viewFromQuery, type View } from './views.ts'
 
+/** A thing of the library (a list, an artist, a folder) as the sidebar and «Tu biblioteca» show it: it leads to `view`. */
+export interface LibraryEntry { key: string; name: string; note?: string; picture?: string | null; view: View; device?: boolean; title?: string }
+
 /** Something the audio element can play, and how to give it back when the song changes. */
 export interface Playable { url: string; release?: () => void }
 
@@ -48,6 +51,11 @@ export interface Store {
   /** where the music is, in words: «tu nube» (the web) or «este equipo» (an app with its own engine) */
   where: string
   files: Files
+  /** the app's own fetch, which reaches any site (an app's host, the desktop's; null on the web, where the browser does
+   *  not let a page ask other sites): the song's info is asked to Deezer with it, without a server */
+  openFetch: ((url: string, init?: RequestInit) => Promise<Response>) | null
+  /** the library's lists, artists and folders (what the sidebar shows), and whether they have loaded */
+  library: { artists: LibraryEntry[]; lists: LibraryEntry[]; folders: LibraryEntry[]; loaded: boolean }
   state: { follows: Follow[]; playlists: PlaylistSummary[]; downloads: Downloads; albums: Release[]; loaded: boolean; connected: boolean; error: string }
   refreshFollows: () => Promise<void>
   refreshPlaylists: () => Promise<void>

@@ -12,7 +12,7 @@
           <template v-else>{{ shown.artist }}</template>
         </small>
       </span>
-      <span class="rp-minibar-devices" @click.stop><DevicePicker v-if="connect.on" /></span>
+      <span class="rp-minibar-devices" @click.stop><DevicePicker v-if="connect.on" :count="false" /></span>
       <button class="rp-minibar-play" :disabled="view.loading" :aria-label="view.playing ? 'Pausar' : 'Reproducir'" @click.stop="control.toggle">
         <span v-if="view.loading" class="rp-spin"></span><i v-else :class="['rp-i', view.playing ? 'rp-i-pause' : 'rp-i-play']" aria-hidden="true"></i>
       </button>
@@ -34,6 +34,7 @@
         <LyricsPanel v-if="panel === 'lyrics' && inFull" @close="panel = ''" />
         <QueuePanel v-else-if="panel === 'queue' && inFull" @close="panel = ''" />
         <DevicesPanel v-else-if="panel === 'devices'" @close="panel = ''" />
+        <SongInfoPanel v-else-if="panel === 'info' && inFull" @close="panel = ''" @go="goFromFull" />
         <img v-else-if="shown.cover" :src="shown.cover" alt="" />
         <span v-else class="rp-cover-none"><i class="rp-i rp-i-album" aria-hidden="true"></i></span>
       </div>
@@ -64,6 +65,7 @@
       <div class="rp-full-foot">
         <DevicePicker v-if="connect.on" />
         <span class="rp-grow"></span>
+        <button v-if="!far" :class="['rp-fbtn', { on: panel === 'info' }]" aria-label="Información de la canción" @click="togglePanel('info')"><i class="rp-i rp-i-info" aria-hidden="true"></i></button>
         <button v-if="!far" :class="['rp-fbtn', { on: showLyrics }]" aria-label="Letra" @click="togglePanel('lyrics')"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
       </div>
       <p v-if="player.error && !far" class="rp-perror">{{ player.error }}</p>
@@ -118,6 +120,7 @@
     </div>
     <div class="rp-pright">
       <DevicePicker v-if="connect.on" />
+      <button v-if="!far" :class="['rp-pbtn', { on: panel === 'info' }]" title="Información de la canción" :aria-pressed="panel === 'info'" @click="togglePanel('info')"><i class="rp-i rp-i-info" aria-hidden="true"></i></button>
       <button v-if="!far" :class="['rp-pbtn', { on: showLyrics }]" title="Letra" :aria-pressed="showLyrics" @click="togglePanel('lyrics')"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
       <button v-if="!far" :class="['rp-pbtn', { on: showQueue }]" title="Cola" @click="togglePanel('queue')"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
       <span class="rp-muted"><i class="rp-i rp-i-volume" aria-hidden="true"></i></span>
@@ -141,6 +144,7 @@ import DevicePicker from './DevicePicker.vue'
 import LyricsPanel from './LyricsPanel.vue'
 import QueuePanel from './QueuePanel.vue'
 import DevicesPanel from './DevicesPanel.vue'
+import SongInfoPanel from './SongInfoPanel.vue'
 
 defineOptions({ inheritAttrs: false })
 const { go, server, device } = useStore()

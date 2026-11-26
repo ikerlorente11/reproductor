@@ -34,12 +34,10 @@
         </div>
       </section>
 
-      <section v-if="listened.length" class="rp-section">
-        <h2 class="rp-h2">Escuchado hace poco</h2>
-        <SongList :songs="listened.slice(0, 6)" covers :extra="(_s, i) => whereAndWhen(plays[i])" />
-      </section>
+      <FavoriteCards />
 
-      <section class="rp-section">
+      <!-- before anything was listened to, what came in last -->
+      <section v-if="!hasFavorites" class="rp-section">
         <h2 class="rp-h2">Lo último en tu biblioteca</h2>
         <p v-if="loading" class="rp-muted"><span class="rp-spin"></span> Cargando…</p>
         <p v-else-if="!recent.length" class="rp-muted">Aún no ha terminado de bajarse ningún disco. Aparecerán aquí según vayan llegando.</p>
@@ -50,7 +48,7 @@
       </section>
 
       <section v-if="top.length" class="rp-section">
-        <h2 class="rp-h2">Lo que más escuchas</h2>
+        <h2 class="rp-h2">Tus canciones más escuchadas</h2>
         <SongList :songs="top.map((t) => t.song)" covers :extra="(_s, i) => `${top[i].count} ${top[i].count === 1 ? 'vez' : 'veces'}`" />
       </section>
 
@@ -75,6 +73,8 @@ import type { Release } from '../lib/api'
 import { albumOf, releaseSongs } from '../lib/library'
 import { play } from '../lib/player'
 import { useStore } from '../lib/store'
+import { mine, topFavorites } from '../lib/mine'
+import FavoriteCards from './FavoriteCards.vue'
 import ReleaseCard from './ReleaseCard.vue'
 import SongList from './SongList.vue'
 import type { Song } from '../lib/library'
@@ -83,22 +83,14 @@ const { api, state, go, notify, refreshFollows, where } = useStore()
 const recent = ref<Release[]>([])
 const failed = ref<Release[]>([])
 const loading = ref(true)
-/** what the user listened to lately and the most, on any of their devices (the server keeps it) */
-const plays = ref<{ song: Song; at: number; device: string }[]>([])
+/** the songs listened to most, on any of the user's devices (the server keeps it) */
 const top = ref<{ song: Song; count: number }[]>([])
-const listened = computed(() => plays.value.map((p) => p.song))
-function whereAndWhen(p?: { at: number; device: string }) {
-  if (!p) return ''
-  const mins = Math.round((Date.now() / 1000 - p.at) / 60)
-  const when = mins < 60 ? `hace ${Math.max(1, mins)} min` : mins < 1440 ? `hace ${Math.round(mins / 60)} h` : new Date(p.at * 1000).toLocaleDateString('es')
-  return p.device ? `${when} · ${p.device.split(' · ')[0]}` : when
-}
+/** the lists and artists listened to most (FavoriteCards); till there are some, what came in last shows instead */
+const hasFavorites = computed(() => topFavorites(mine.favorites).length > 0)
 async function loadPlays() {
   try {
-    const [p, t] = await Promise.all([api.plays(6), api.topPlays(6)])
-    plays.value = p
-    top.value = t.filter((x) => x.count > 1)
-  } catch (_) { /* an older server has no history: the sections just do not show */ }
+    top.value = (await api.topPlays(5)).filter((x) => x.count > 1)
+  } catch (_) { /* an older server has no history: the section just does not show */ }
 }
 const checking = ref(false)
 

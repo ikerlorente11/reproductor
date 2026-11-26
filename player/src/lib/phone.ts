@@ -2,9 +2,9 @@
  *  bottom, the player as a bar over them that opens to the whole screen — instead of the sidebar and bottom bar. */
 import { ref } from 'vue'
 
-/** The player's panel open — the lyrics, the queue or the devices: on a wide screen it takes the page's place, in a
+/** The player's panel open — the lyrics, the queue, the devices or the song's info: on a wide screen it takes the page's place, in a
  *  phone's player the cover's. Never a window of its own. */
-export type Panel = '' | 'lyrics' | 'queue' | 'devices'
+export type Panel = '' | 'lyrics' | 'queue' | 'devices' | 'info'
 export const panel = ref<Panel>('')
 export function togglePanel(name: Panel) { panel.value = panel.value === name ? '' : name }
 

@@ -659,7 +659,8 @@ a.rp-strip:hover { filter: brightness(.97); }
 .rp-i-phone { --rp-i: url('/icons/smartphone-line.svg'); }
 .rp-i-web { --rp-i: url('/icons/global-line.svg'); }
 .rp-i-check { --rp-i: url('/icons/check-line.svg'); }
-.rp-devices .rp-pbtn { position: relative; }
+.rp-i-info { --rp-i: url('/icons/information-line.svg'); }
+.rp-pbtn.rp-devices { position: relative; }
 .rp-devcount { position: absolute; right: -2px; top: -2px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; font-size: 9.5px;
   line-height: 15px; font-weight: 750; background: var(--rp-accent); color: var(--rp-on-accent); }
 .rp-menu.rp-devmenu { width: min(330px, calc(100vw - 32px)); max-height: min(460px, 70vh); }
@@ -706,7 +707,9 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 
 /* ---- a phone (isPhone: narrow screens): tabs at the bottom, a bar of the player over them, the player over the whole
    screen when touched; the pages roomier and centred, as the music apps people know ---- */
-.rp.rp-phone { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; grid-template-areas: "main" "bar" "tabs"; }
+.rp.rp-phone { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; grid-template-areas: "main" "bar" "tabs";
+  /* an app drawn under the system's bars (Android's edge to edge): clear of them (0 when the app already is) */
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 .rp-phone .rp-page { padding: 8px 16px 28px; gap: 18px; }
 .rp-phone .rp-h1 { font-size: 26px; }
 .rp-phone .rp-h1.rp-big { font-size: clamp(24px, 7.4vw, 34px); }
@@ -750,7 +753,8 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 
 /* the player's bar over the tabs, in the colour of the cover */
 .rp-minibar { position: relative; display: flex; align-items: center; gap: 10px; margin: 0 8px 4px; padding: 7px 8px 9px; border-radius: 9px;
-  background: var(--rp-tint, #34343b); color: #fff; cursor: pointer; overflow: visible; transition: background .4s; }
+  background: var(--rp-tint, #34343b); color: #fff; cursor: pointer; overflow: visible; transition: background .4s;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 4px 14px rgba(0,0,0,.25); }
 .rp-minibar-cover { width: 40px; height: 40px; border-radius: 5px; object-fit: cover; flex: none; font-size: 18px; }
 .rp-minibar-text { flex: 1; display: grid; min-width: 0; line-height: 1.25; }
 .rp-minibar-text strong { font-size: 13.5px; }
@@ -764,7 +768,8 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 .rp-minibar-progress i { display: block; height: 100%; background: #fff; }
 
 /* the player over the whole screen */
-.rp-full { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; gap: 14px; padding: 10px 22px 22px; color: #fff; overflow: hidden;
+.rp-full { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; gap: 14px; color: #fff; overflow: hidden;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 22px calc(22px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(180deg, var(--rp-tint, #3a3a42) 0%, color-mix(in srgb, var(--rp-tint, #3a3a42) 45%, #121214) 48%, #121214 100%);
   animation: rp-full-in .22s ease-out; }
 @keyframes rp-full-in { from { transform: translateY(24px); opacity: .4; } }
@@ -802,7 +807,8 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 .rp-full .rp-perror { color: #ffb3bd; }
 /* the lyrics and the queue: a sheet over the player */
 .rp-full .rp-sheet { position: absolute; inset: 0; width: auto; height: auto; max-height: none; right: auto; bottom: auto; z-index: 5; border-radius: 0;
-  border: 0; box-shadow: none; color: inherit; background: var(--rp-tint, #3a3a42); padding: 10px 16px 18px; }
+  border: 0; box-shadow: none; color: inherit; background: var(--rp-tint, #3a3a42);
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px calc(18px + env(safe-area-inset-bottom, 0px)); }
 .rp-full .rp-queue.rp-sheet { background: #17171a; overflow-y: auto; }
 .rp-full .rp-queue li { padding: 8px 6px; }
 .rp-full .rp-queue li.on { background: rgba(255,255,255,.08); color: var(--rp-accent); }
@@ -912,3 +918,42 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 @keyframes rp-sheet-in { from { transform: translateY(40px); opacity: .5; } }
 /* the toasts above the player's bar and the tabs */
 .rp-phone .rp-toast { bottom: 150px; }
+
+/* Inicio's «Lo que más escuchas»: big cells; a list's cover is a mosaic of its songs', an artist's picture is round */
+.rp-cover.rp-mosaic { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.rp-cover.rp-mosaic img { min-height: 0; }
+.rp-fav-artist .rp-cover { overflow: visible; background: transparent; box-shadow: none; }
+.rp-fav-artist .rp-cover img, .rp-fav-artist .rp-cover .rp-cover-none { border-radius: 50%; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.rp-fav-artist .rp-cover-play { right: 4px; bottom: 4px; }
+.rp-cover-play .rp-spin { width: 16px; height: 16px; }
+
+/* «Tu biblioteca»: each kind in its section; what brings music in, behind a button of the header */
+.rp-libgroup { display: grid; gap: 4px; }
+.rp-libgroup-head { margin: 6px 0 2px; font-size: 18px; }
+.rp-libpage-more { position: relative; display: inline-flex; }
+.rp-libpage-more-item { gap: 12px; }
+.rp-libpage-more-item .rp-librow-pinned { width: 44px; height: 44px; flex: none; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
+.rp-libpage-more-item .rp-librow-text > span { font-size: 15px; }
+/* a section's title with its link («Ver todo») on a phone: the link small, the title clear of the grid under it */
+.rp-phone .rp-h2.rp-search-sec { margin: 8px 0 0; align-items: center; }
+.rp-phone .rp-h2.rp-search-sec a { font-size: 14px; color: var(--rp-muted); }
+
+/* the song's info (SongInfoPanel): its artists, then what there is of the song, its album and its file */
+.rp-info-h { margin: 10px 0 2px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--rp-muted); }
+.rp-info-artists { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rp-info-artist { display: flex; align-items: center; gap: 12px; padding: 6px 4px; border-radius: 10px; text-decoration: none; min-width: 0; }
+a.rp-info-artist:hover { background: var(--rp-surface-2); }
+.rp-info-artist img, .rp-info-artist-none { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex: none; display: inline-flex;
+  align-items: center; justify-content: center; background: var(--rp-surface-3); color: var(--rp-accent); font-size: 20px; }
+.rp-info-artist-text { display: grid; gap: 1px; min-width: 0; }
+.rp-info-artist-text strong { font-size: 15px; }
+.rp-info-list { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 16px; margin: 0; font-size: 14px; }
+.rp-info-list dt { color: var(--rp-muted); }
+.rp-info-list dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.rp-info-code { font-family: ui-monospace, monospace; font-size: 12.5px; }
+.rp-info-links { margin: 12px 0 0; }
+.rp-full-panel .rp-info-h, .rp-full-panel .rp-info-list dt { color: rgba(255,255,255,.68); }
+.rp-full-panel .rp-info-artist { color: #fff; }
+.rp-full-panel a.rp-info-artist:hover { background: rgba(255,255,255,.08); }
+.rp-full-panel .rp-info-artist-none { background: rgba(255,255,255,.12); }
+.rp-full-panel .rp-info-list a { color: #fff; }

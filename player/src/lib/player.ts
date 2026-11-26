@@ -7,7 +7,7 @@
  */
 import { computed, reactive, watch } from 'vue'
 import { queueFrom, shuffled, type Song } from './library.ts'
-import { recordPlay } from './mine.ts'
+import { recordPlay, type PlaySource } from './mine.ts'
 
 type Resolved = { url: string; release?: () => void }
 
@@ -24,6 +24,9 @@ export interface OutputEvents {
   ended(): void
   /** a continuous output went by itself (or from the notification) to another song of its window */
   moved?(key: string): void
+  /** where a continuous output was last (its song and second, and when: ms since 1970), though it has nothing loaded now:
+   *  it went on while the page slept and the app was closed meanwhile */
+  resumed?(key: string, seconds: number, at: number): void
   error?(message: string): void
 }
 
@@ -87,7 +90,9 @@ const state = reactive({
   time: 0,
   duration: 0,
   volume: 1,
-  error: ''
+  error: '',
+  /** where the queue was started from (a list, say): what its songs count for in «Lo que más escuchas» */
+  source: null as PlaySource | null
 })
 try { state.volume = Number(localStorage.getItem('reproductor.volume') ?? 1) } catch (_) {}
 try { state.repeat = localStorage.getItem('reproductor.repeat') === '1' } catch (_) {}
@@ -99,6 +104,8 @@ let current: Resolved | null = null
 let seq = 0
 /** Where to start the next song that loads (the second it was left at, restored or chosen while paused). */
 let resumeAt = 0
+/** when the playback last really changed (its queue, its song, its second): ms since 1970 */
+let changedAt = 0
 /** how long the current song has really played (seeks aside), and whether it already counted as listened */
 let heard = 0
 let lastTick = 0
@@ -113,8 +120,10 @@ try {
     state.queue = saved.queue
     state.index = saved.index
     state.shuffle = !!saved.shuffle
+    state.source = saved.source || null
     state.time = resumeAt = Math.max(0, Number(saved.time) || 0)
     state.duration = saved.queue[saved.index].duration || 0
+    changedAt = Number(saved.at) || 0
   }
 } catch (_) {}
 let savedAt = 0
@@ -124,11 +133,11 @@ function saveSession() {
     if (state.index < 0 || !state.queue.length) { localStorage.removeItem(SESSION); return }
     const from = Math.max(0, Math.min(state.index - SESSION_MAX / 2, state.queue.length - SESSION_MAX))
     localStorage.setItem(SESSION, JSON.stringify({ queue: state.queue.slice(from, from + SESSION_MAX), index: state.index - from,
-                                                   time: Math.floor(state.time), shuffle: state.shuffle }))
+                                                   time: Math.floor(state.time), shuffle: state.shuffle, source: state.source, at: changedAt }))
   } catch (_) {}
 }
-watch(() => [state.queue, state.index, state.shuffle], saveSession)
-watch(() => state.time, () => { if (Date.now() - savedAt > 5000) saveSession() })
+watch(() => [state.queue, state.index, state.shuffle, state.source], () => { changedAt = Date.now(); saveSession() })
+watch(() => state.time, () => { changedAt = Date.now(); if (Date.now() - savedAt > 5000) saveSession() })
 if (typeof window !== 'undefined') window.addEventListener('pagehide', saveSession)
 
 export const player = state
@@ -137,6 +146,10 @@ export const hasPrev = computed(() => state.index > 0 || (state.repeat && state.
 export const hasNext = computed(() => state.index < state.queue.length - 1 || (state.repeat && state.queue.length > 0))
 
 export function setResolver(fn: (song: Song) => Promise<Resolved>) { resolver = fn }
+
+/** Where a queue started now comes from, unless `play` is told: the app says (the page on screen). */
+let sourceOf: (() => PlaySource | null) | null = null
+export function setSourceOf(fn: () => PlaySource | null) { sourceOf = fn }
 
 /** The app's own output (before anything plays): Android's, which goes on with the screen off. */
 export function setOutput(make: () => AudioOutput) {
@@ -155,7 +168,7 @@ function el(): AudioOutput {
       if (t > lastTick && t - lastTick < 2) heard += t - lastTick
       lastTick = t
       const song = state.queue[state.index]
-      if (song && !counted && heard >= Math.min(30, (state.duration || 60) / 2)) { counted = true; recordPlay(song) }
+      if (song && !counted && heard >= Math.min(30, (state.duration || 60) / 2)) { counted = true; recordPlay(song, state.source) }
       state.time = t
     },
     duration(d) { state.duration = d || state.queue[state.index]?.duration || 0 },
@@ -163,6 +176,7 @@ function el(): AudioOutput {
     pause() { state.playing = false; saveSession(); mediaState() },
     ended() { if (!next()) { state.playing = false } },
     moved(key) { moved(key) },
+    resumed(key, seconds, at) { resumed(key, seconds, at) },
     error(message) {
       const song = state.queue[state.index]
       state.error = song ? `No se pudo reproducir «${song.title}»: ${message}` : message
@@ -238,6 +252,23 @@ function moved(key: string) {
   mediaSong(state.queue[found])
 }
 
+/** The output kept where it went while this page slept (the app was closed meanwhile): the queue goes on from there,
+ *  if that is newer than what this page knew and the song is in its queue (the nearest to where it was). */
+function resumed(key: string, seconds: number, at: number) {
+  if (at <= changedAt || audio?.loaded || state.playing) return
+  let found = state.queue[state.index]?.key === key ? state.index : -1
+  for (let d = 1; d <= state.queue.length && found < 0; d++) {
+    if (state.queue[state.index + d]?.key === key) found = state.index + d
+    else if (state.queue[state.index - d]?.key === key) found = state.index - d
+  }
+  if (found < 0) return
+  state.index = found
+  state.time = resumeAt = Math.max(0, seconds)
+  state.duration = state.queue[found].duration || 0
+  changedAt = at
+  saveSession()
+}
+
 /** Plays the queue's song `i`; true once it sounds (false: it failed, or the user moved on meanwhile). */
 async function playAt(i: number): Promise<boolean> {
   const song = state.queue[i]
@@ -283,10 +314,11 @@ async function playAt(i: number): Promise<boolean> {
   }
 }
 
-/** Play `pool` from `start` (or from the beginning / a random song). */
-export function play(pool: Song[], start: Song | null = null, shuffle = state.shuffle) {
+/** Play `pool` from `start` (or from the beginning / a random song). `source`: where it comes from (else the page's). */
+export function play(pool: Song[], start: Song | null = null, shuffle = state.shuffle, source?: PlaySource | null) {
   if (start && nowPlaying.value?.key === start.key && pool.some((s) => s.key === start.key)) { toggle(); return }
   state.shuffle = shuffle
+  state.source = source !== undefined ? source : sourceOf?.() ?? null
   resumeAt = 0   // a new queue starts at the start of its song
   const { queue, index } = queueFrom(pool, start, shuffle)
   state.queue = queue
@@ -369,14 +401,14 @@ export function resume() {
 }
 
 /** A playback handed between devices (connect.ts): the queue, where in it and the second. */
-export interface Session { queue: Song[]; index: number; time: number; shuffle: boolean; repeat: boolean }
+export interface Session { queue: Song[]; index: number; time: number; shuffle: boolean; repeat: boolean; source?: PlaySource | null }
 
 /** The playback as it is now (the queue cut to `max` songs around the current one); null with nothing queued. */
 export function currentSession(max = 1000): Session | null {
   if (state.index < 0 || !state.queue.length) return null
   const from = Math.max(0, Math.min(state.index - max / 2, state.queue.length - max))
   return { queue: state.queue.slice(from, from + max), index: state.index - from, time: Math.floor(state.time),
-           shuffle: state.shuffle, repeat: state.repeat }
+           shuffle: state.shuffle, repeat: state.repeat, source: state.source }
 }
 
 /** Takes a playback from another device: its queue, from its song and second (playing, unless `play` is false).
@@ -386,6 +418,7 @@ export async function startSession(s: Session, play = true): Promise<boolean> {
   seq++
   state.queue = s.queue
   state.shuffle = !!s.shuffle
+  state.source = s.source || null
   if (state.repeat !== !!s.repeat) toggleRepeat()
   state.index = s.index
   state.time = resumeAt = Math.max(0, s.time || 0)

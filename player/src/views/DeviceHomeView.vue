@@ -20,10 +20,7 @@
     </div>
 
     <template v-else>
-      <section v-if="recent.length" class="rp-section">
-        <h2 class="rp-h2 rp-search-sec">Escuchado hace poco <a href="#" @click.prevent="go({ v: 'recent' })">Ver todo</a></h2>
-        <SongList :songs="recent" covers />
-      </section>
+      <FavoriteCards />
 
       <section v-if="added.length" class="rp-section">
         <h2 class="rp-h2 rp-search-sec">Añadido hace poco <a href="#" @click.prevent="go({ v: 'albums' })">Todos los discos</a></h2>
@@ -31,7 +28,7 @@
       </section>
 
       <section v-if="top.length" class="rp-section">
-        <h2 class="rp-h2">Lo que más escuchas</h2>
+        <h2 class="rp-h2">Tus canciones más escuchadas</h2>
         <SongList :songs="top.map((t) => t.song)" covers :extra="(_s, i) => `${top[i].count} ${top[i].count === 1 ? 'vez' : 'veces'}`" />
       </section>
 
@@ -52,19 +49,19 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { recentSongs, topSongs } from '../lib/mine'
+import { topSongs } from '../lib/mine'
 import { useStore } from '../lib/store'
 import DeviceAlbumCard from './DeviceAlbumCard.vue'
+import FavoriteCards from './FavoriteCards.vue'
 import SongList from './SongList.vue'
 
-/** Home without a server: what you listened to lately, what came in lately, your most played and your artists. */
+/** Home without a server: the lists and artists you listen to most, what came in lately, your most played songs and your artists. */
 const { device, go, notify } = useStore()
 const lib = device!.state
 const hour = new Date().getHours()
 const greeting = hour < 6 ? 'Buenas noches' : hour < 14 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches'
 
-const recent = computed(() => recentSongs(6))
-const top = computed(() => topSongs(6).filter((t) => t.count > 1))
+const top = computed(() => topSongs(5).filter((t) => t.count > 1))
 const added = computed(() => (lib.tracks, [...device!.albums].sort((a, b) => b.added - a.added).slice(0, 12)))
 const artists = computed(() => (lib.tracks, [...device!.artists].sort((a, b) => b.tracks.length - a.tracks.length).slice(0, 12)))
 

@@ -140,6 +140,7 @@
       <LyricsPanel v-if="panel === 'lyrics' && !phone" class="rp-lyrics-page" @close="panel = ''" />
       <QueuePanel v-else-if="panel === 'queue' && !phone" class="rp-panel-page" @close="panel = ''" />
       <DevicesPanel v-else-if="panel === 'devices' && !phone" class="rp-panel-page" @close="panel = ''" />
+      <SongInfoPanel v-else-if="panel === 'info' && !phone" class="rp-panel-page" @close="panel = ''" @go="(v: View) => { panel = ''; go(v) }" />
       <template v-else-if="view.v === 'home'"><HomeView v-if="server" /><DeviceHomeView v-else-if="device" /></template>
       <template v-else-if="view.v === 'search'">
         <template v-if="server"><SearchView :q="view.q || ''" :tab="view.tab" /><DeviceSearchView v-if="device && view.q" :q="view.q" embedded /></template>
@@ -211,11 +212,11 @@ import type { Offline } from '../lib/offline'
 import { createList, mine } from '../lib/mine'
 import { Soundlift, soundliftState } from '../lib/soundlift'
 import { isAudioName, isBusy, libraryArtists, releaseSongs, type Song } from '../lib/library'
-import { nowPlaying, play, setResolver } from '../lib/player'
+import { nowPlaying, play, setResolver, setSourceOf } from '../lib/player'
 import { control, startConnect, stopConnect, type Me } from '../lib/connect'
 import { startHandoff, stopHandoff } from '../lib/handoff'
 import HandoffBanner from './HandoffBanner.vue'
-import { STORE, createState, queryFromView, type Files, type RemoveRequest, type View } from '../lib/store'
+import { STORE, createState, queryFromView, type Files, type LibraryEntry, type RemoveRequest, type View } from '../lib/store'
 import '../lib/ui.css'
 import HomeView from './HomeView.vue'
 import SearchView from './SearchView.vue'
@@ -241,6 +242,7 @@ import { answer, question } from '../lib/ask'
 import LyricsPanel from './LyricsPanel.vue'
 import QueuePanel from './QueuePanel.vue'
 import DevicesPanel from './DevicesPanel.vue'
+import SongInfoPanel from './SongInfoPanel.vue'
 import DeviceDownloadView from './DeviceDownloadView.vue'
 
 /**
@@ -280,6 +282,8 @@ const props = defineProps<{
   me?: Me
   /** one device per browser, not per tab (the web): a tab takes it over with the browser's lock */
   oneTab?: boolean
+  /** the app's fetch that reaches any site (not the web's): Deezer is asked a song's info with it, server or not */
+  openFetch?: (url: string, init?: RequestInit) => Promise<Response>
 }>()
 
 const server = !!props.api
@@ -348,7 +352,7 @@ async function refreshAlbums() {
   } catch (_) { /* the follows' error already shows */ }
 }
 /** The sidebar's entries: each leads to a page (`view`). */
-interface Entry { key: string; name: string; note?: string; picture?: string | null; view: View; device?: boolean; title?: string }
+type Entry = LibraryEntry
 const isHere = (v: View) => JSON.stringify(queryFromView(v)) === JSON.stringify(queryFromView(view.value))
 const loaded = computed(() => (server ? state.loaded : !!device?.state.loaded))
 /** With a server, the artists of the cloud (followed or with music there); else this device's. */
@@ -526,7 +530,8 @@ async function pruneFolders(paths: string[]) {
   }
 }
 
-provide(STORE, { api, server, device, engine, offline, musicRoot, cloudName, where, files, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
+const library = reactive({ artists, lists, folders: computed(() => allFolders.value), loaded })
+provide(STORE, { api, server, device, engine, offline, musicRoot, cloudName, where, files, openFetch: props.openFetch || null, library, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
 
 // ---- folders of the music root (the music that is not by followed artist yet) ----
 const folders = ref<{ path: string; name: string }[]>([])
@@ -574,6 +579,14 @@ const pinned = computed(() => [
 
 // ---- player: cloud path → playable URL ----
 setResolver((song) => files.play(song))
+// what is played from a list's page counts for that list («Lo que más escuchas» on Inicio)
+setSourceOf(() => {
+  const v = view.value
+  if (v.v === 'playlist') return { kind: 'list', key: `playlist:${v.id}`, name: state.playlists.find((p) => p.id === v.id)?.name || '', view: v }
+  if (v.v === 'llist') return { kind: 'list', key: `llist:${v.id}`, name: mine.lists.find((l) => l.id === v.id)?.name || '', view: v }
+  if (v.v === 'likes') return { kind: 'list', key: 'likes', name: 'Me gusta', view: v }
+  return null
+})
 
 // ---- keep an eye on downloads while something is going on ----
 let poll: any = null

@@ -23,7 +23,10 @@ export async function coverColor(url: string | null | undefined): Promise<string
           r += d[i] * w; gr += d[i + 1] * w; b += d[i + 2] * w; n += w
         }
         const k = Math.min(1, 150 / Math.max(1, Math.max(r, gr, b) / n))   // no brighter than 150 in its strongest channel
-        resolve(`rgb(${Math.round((r / n) * k)}, ${Math.round((gr / n) * k)}, ${Math.round((b / n) * k)})`)
+        const rgb = [r, gr, b].map((x) => (x / n) * k)
+        // nor darker than 64 (a black cover would vanish on the dark background): lifted evenly, the hue kept
+        const lift = Math.max(0, 64 - Math.max(...rgb))
+        resolve(`rgb(${rgb.map((x) => Math.round(x + lift)).join(', ')})`)
       } catch (_) { resolve(null) }   // a cover of another site that does not allow reading it
     }
     img.onerror = () => resolve(null)
