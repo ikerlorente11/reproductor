@@ -50,6 +50,14 @@ class Settings(private val context: Context) {
         else secret.edit().putString("page:$key", value).commit()
     }
 
+    /** What the host itself keeps secret (the cloud it plays from, so the widget can play with the app closed). */
+    fun hostSecret(key: String): String? = secret.getString("host:$key", null)
+
+    fun saveHostSecret(key: String, value: String?) {
+        if (value == null) secret.edit().remove("host:$key").commit()
+        else secret.edit().putString("host:$key", value).commit()
+    }
+
     /** The folders of this device's music the person took out of the library. */
     var hiddenRoots: Set<String>
         get() = plain.getStringSet("hiddenRoots", emptySet()) ?: emptySet()

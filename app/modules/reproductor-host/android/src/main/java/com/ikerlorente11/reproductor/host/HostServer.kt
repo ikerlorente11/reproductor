@@ -43,7 +43,8 @@ class HostServer(private val context: Context, port: Int) : NanoHTTPD("127.0.0.1
     val events = Events()
     val library = Library(context, settings, events)
     private val cloud = Cloud(settings, events)
-    val playback = Playback(context, events)
+    /** the player; what it was left playing is played again here, with this server's address and token */
+    val playback = Playback(context, events) { "http://127.0.0.1:$listeningPort" to token }
     private val pinger = Timer("reproductor-events", true)
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)

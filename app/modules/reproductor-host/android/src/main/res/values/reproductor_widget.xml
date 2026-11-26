@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="reproductor_widget_label">El Reproductor</string>
+  <string name="reproductor_widget_description">Lo que suena y sus botones. Cámbiale el tamaño: se adapta al hueco.</string>
+  <string name="reproductor_widget_play">Reproducir</string>
+  <string name="reproductor_widget_pause">Pausar</string>
+  <string name="reproductor_widget_prev">Anterior</string>
+  <string name="reproductor_widget_next">Siguiente</string>
+  <string name="reproductor_widget_empty">Toca para elegir música</string>
+  <string name="reproductor_widget_resume">Toca ▶ para seguir</string>
+</resources>

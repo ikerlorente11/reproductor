@@ -1,20 +1,22 @@
 /* The Android shell: the player's styles plus a light/dark theme of its own (there is no OpenCloud theme here), which
-   follows the system. The icons come with the app (public/icons), not from OpenCloud. */
+   follows the system unless one is chosen in Ajustes (`data-theme` on <html>, lib/theme.ts). The icons come with the
+   app (public/icons), not from OpenCloud. */
 :root {
   --oc-role-surface: #ffffff; --oc-role-surface-container: #f2f2f5; --oc-role-surface-container-high: #e6e6ea;
   --oc-role-outline-variant: #e0e0e6; --oc-role-on-surface-variant: #6f6f78; --oc-role-on-surface: #1b1b1f; --oc-role-background: #fafafc;
   color-scheme: light;
 }
+/* Dark: the one chosen in Ajustes (`data-theme`, lib/theme.ts), else the system's as the app says it (`data-scheme`: ?scheme=,
+   then window.__reproductorScheme; the web view's own prefers-color-scheme sometimes says light with the system in
+   dark), else the web view's guess. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-scheme="light"]) {
+  :root:not([data-scheme="light"]):not([data-theme="light"]) {
     --oc-role-surface: #1c1c20; --oc-role-surface-container: #26262b; --oc-role-surface-container-high: #313137;
     --oc-role-outline-variant: #3a3a41; --oc-role-on-surface-variant: #a3a3ad; --oc-role-on-surface: #ededf2; --oc-role-background: #141417;
     color-scheme: dark;
   }
 }
-/* the app says which theme the system has (?scheme=, then window.__reproductorScheme): the web view's own
-   prefers-color-scheme sometimes says light with the system in dark */
-:root[data-scheme="dark"] {
+:root[data-scheme="dark"]:not([data-theme="light"]), :root[data-theme="dark"] {
   --oc-role-surface: #1c1c20; --oc-role-surface-container: #26262b; --oc-role-surface-container-high: #313137;
   --oc-role-outline-variant: #3a3a41; --oc-role-on-surface-variant: #a3a3ad; --oc-role-on-surface: #ededf2; --oc-role-background: #141417;
   color-scheme: dark;
@@ -37,3 +39,5 @@ html, body { margin: 0; height: 100%; font: 15px/1.4 system-ui, Roboto, sans-ser
 .ra-form { display: grid; gap: 10px; max-width: 520px; }
 .ra-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
 .ra-form .rp-input { padding: 10px 12px; font-size: 16px; }
+.ra-theme .rp-chip { font: inherit; font-size: 14px; padding: 7px 16px; }
+.ra-theme .rp-chip:not(.on) { background: transparent; color: inherit; }

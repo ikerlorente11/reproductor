@@ -172,14 +172,16 @@ export function nativeOutput(): AudioOutput {
   let loaded = false
   let on: OutputEvents | null = null
   const cmd = (body: Record<string, unknown>) =>
-    post<{ loaded: boolean; key?: string | null; t?: number; d?: number; playing?: boolean; ended?: boolean }>('/host/audio', body)
+    post<{ loaded: boolean; key?: string | null; t?: number; d?: number; playing?: boolean; ended?: boolean
+           saved?: { key: string; t: number; at: number } | null }>('/host/audio', body)
   const absolute = (it: OutputItem): OutputItem => ({ ...it, url: it.url ? current(it.url) : '', cover: it.cover ? current(it.cover) : null })
   /** What the player did while this page slept (or before it was loaded again): its song, its second, whether it plays. */
   async function resync() {
     if (!on) return
     try {
       const s = await cmd({ op: 'state' })
-      if (!s.loaded) return
+      // the app was closed: where the player was kept (it went on while this page slept)
+      if (!s.loaded) { if (s.saved) on.resumed?.(s.saved.key, s.saved.t, s.saved.at); return }
       loaded = true
       if (s.key) on.moved?.(s.key)
       if (s.d) on.duration(s.d)
@@ -202,10 +204,11 @@ export function nativeOutput(): AudioOutput {
     switch (e.ev) {
       case 'time': time = e.t; on.time(e.t); break
       case 'duration': on.duration(e.d); break
-      case 'play': if (paused) { paused = false; on.play() } break
+      // (it may have been started from the widget, with nothing loaded from here)
+      case 'play': loaded = true; if (paused) { paused = false; on.play() } break
       case 'pause': if (typeof e.t === 'number') time = e.t; if (!paused) { paused = true; on.pause() } break
       case 'ended': paused = true; on.ended(); break
-      case 'moved': on.moved?.(e.key); break
+      case 'moved': loaded = true; on.moved?.(e.key); break
       case 'error': on.error?.(e.message); break
     }
   }, resync)

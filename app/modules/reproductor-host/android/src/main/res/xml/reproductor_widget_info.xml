@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The player as a widget (PlayerWidget.kt): four by two at first, resizable from one cell to the whole screen; narrow
+     it is the cover and play, wider the song on the left and its buttons on the right, sized to it. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="40dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen|keyguard"
+    android:initialLayout="@layout/reproductor_widget_wide"
+    android:previewLayout="@layout/reproductor_widget_wide"
+    android:description="@string/reproductor_widget_description"
+    android:updatePeriodMillis="0" />

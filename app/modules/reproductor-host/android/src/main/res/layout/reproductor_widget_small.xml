@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget at its smallest (one or two cells): the cover and play/pause. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rw_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/reproductor_widget_bg"
+    android:clipToOutline="true">
+
+    <ImageView
+        android:id="@+id/rw_cover"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/rw_cover_none"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="top|start"
+        android:layout_margin="10dp"
+        android:src="@drawable/reproductor_widget_music"
+        android:contentDescription="@null" />
+
+    <ProgressBar
+            android:id="@+id/rw_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="5dp"
+            android:layout_gravity="bottom"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="10dp"
+            android:max="1000"
+            android:progress="0"
+            android:progressDrawable="@drawable/reproductor_widget_progress" />
+
+    <ImageButton
+        android:id="@+id/rw_play"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:background="@drawable/reproductor_widget_play_bg"
+        android:src="@drawable/reproductor_widget_play"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/reproductor_widget_play" />
+</FrameLayout>

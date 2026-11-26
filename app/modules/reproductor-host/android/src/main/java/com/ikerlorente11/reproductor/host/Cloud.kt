@@ -1,6 +1,7 @@
 package com.ikerlorente11.reproductor.host
 
 import android.util.Base64
+import android.util.Log
 import android.util.Xml
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -21,12 +22,14 @@ import java.util.concurrent.TimeUnit
  * cloud.rs: its folders listed for the pages, a song deleted, a song played (`/w/<path>`, by ranges: the player asks
  * for the pieces it needs) and songs kept on this device (copied into the app's music folder with the cloud's own
  * folders, played from there; see [Settings.musicDir]). The page tells it where the cloud is on connecting
- * (`PUT /host/cloud`): it is kept in memory only, the password with the page's secrets.
+ * (`PUT /host/cloud`), and it is kept encrypted (as the page's secrets): the widget plays the cloud's songs with the app
+ * closed, before any page tells it again.
  */
 class Cloud(private val settings: Settings, private val events: Events) {
     private class Conn(val webdav: String, val auth: String)
 
     @Volatile private var conn: Conn? = null
+    @Volatile private var restored = false
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -38,11 +41,27 @@ class Cloud(private val settings: Settings, private val events: Events) {
         val webdav = body.optString("webdav").trim().trimEnd('/')
         val user = body.optString("user")
         val password = body.optString("password")
-        conn = if (webdav.isEmpty() || user.isEmpty() || password.isEmpty()) null
+        val c = if (webdav.isEmpty() || user.isEmpty() || password.isEmpty()) null
             else Conn(webdav, "Basic " + Base64.encodeToString("$user:$password".toByteArray(Charsets.UTF_8), Base64.NO_WRAP))
+        conn = c
+        restored = true
+        try {
+            settings.saveHostSecret(KEPT, c?.let { JSONObject().put("webdav", it.webdav).put("auth", it.auth).toString() })
+        } catch (e: Exception) { Log.w("reproductor", "no se pudo guardar la nube: ${e.message}") }
     }
 
-    private fun need(): Conn = conn ?: throw IllegalStateException("sin servidor conectado")
+    /** The cloud connected: told by the page, or kept from the last time. */
+    private fun current(): Conn? {
+        if (!restored) {
+            restored = true
+            conn = try {
+                settings.hostSecret(KEPT)?.let { JSONObject(it) }?.let { Conn(it.getString("webdav"), it.getString("auth")) }
+            } catch (_: Exception) { null }
+        }
+        return conn
+    }
+
+    private fun need(): Conn = current() ?: throw IllegalStateException("sin servidor conectado")
 
     private fun urlOf(c: Conn, path: String) = c.webdav + encodePath("/" + path.trimStart('/'))
 
@@ -180,6 +199,8 @@ class Cloud(private val settings: Settings, private val events: Events) {
 
     companion object {
         const val MUSIC_ROOT = "Música"
+        /** the host secret that keeps the cloud connected */
+        private const val KEPT = "cloud"
 
         fun encodePath(path: String): String = path.split('/').joinToString("/") { seg ->
             buildString { for (b in seg.toByteArray(Charsets.UTF_8)) { val ch = b.toInt().toChar(); if (ch.isLetterOrDigit() && b >= 0 || ch in "-_.~") append(ch) else append("%%%02X".format(b.toInt() and 0xff)) } }

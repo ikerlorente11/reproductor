@@ -16,5 +16,15 @@
         <action android:name="androidx.media3.session.MediaSessionService" />
       </intent-filter>
     </service>
+    <!-- the player on the home screen (PlayerWidget.kt); its buttons come back to it, so it is exported for the launcher -->
+    <receiver
+      android:name="com.ikerlorente11.reproductor.host.PlayerWidget"
+      android:label="@string/reproductor_widget_label"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/reproductor_widget_info" />
+    </receiver>
   </application>
 </manifest>

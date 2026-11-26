@@ -55,8 +55,27 @@
     </section>
 
     <section class="ra-box">
+      <h2>Apariencia</h2>
+      <div class="rp-chips ra-theme" role="radiogroup" aria-label="Tema">
+        <button v-for="t in themes" :key="t.value" :class="['rp-chip', { on: theme === t.value }]" role="radio" :aria-checked="theme === t.value"
+                @click="theme = t.value">{{ t.label }}</button>
+      </div>
+      <p class="rp-muted rp-small">{{ theme === 'system' ? 'Claro u oscuro, como tengas el móvil.' : theme === 'light' ? 'Siempre claro.' : 'Siempre oscuro.' }}</p>
+    </section>
+
+    <section class="ra-box">
       <h2>El Reproductor</h2>
       <p class="rp-muted rp-small">Versión {{ version || '—' }}.</p>
+      <h3 class="ra-news-h">Novedades de la 0.2.0</h3>
+      <ul class="ra-news">
+        <li>Widget para la pantalla de inicio: lo que suena, sus botones y por dónde va, del tamaño que quieras. Funciona con la app cerrada.</li>
+        <li>Sigue donde lo dejaste: la canción y el segundo, aunque Android cierre la app con la pantalla apagada.</li>
+        <li>Inicio: lo que más escuchas (tus listas y artistas), en grande y a un toque.</li>
+        <li>Información de la canción (ⓘ en el reproductor): todos sus artistas, su disco, la fecha, el ritmo y la discográfica.</li>
+        <li>Tu biblioteca: listas, artistas y carpetas por separado; descargar música y traer tu Spotify, en el botón de arriba.</li>
+        <li>Tema claro, oscuro o el del móvil (Ajustes › Apariencia).</li>
+        <li>«Suena en otro dispositivo» solo sale cuando otro de tus dispositivos está sonando.</li>
+      </ul>
       <h3 class="ra-news-h">Novedades de la 0.1.0</h3>
       <ul class="ra-news">
         <li>La música del móvil, por artistas, discos y carpetas, con sus portadas y sus letras (de un .lrc o de LRCLIB).</li>
@@ -73,6 +92,7 @@
 import { computed, reactive, ref } from 'vue'
 import { LibrariesSettings, ask, type DeviceLibrary, type RemoteLibraries } from 'reproductor-player'
 import { tellApp } from './lib/host'
+import { theme, type Theme } from './lib/theme'
 import type { Connection } from './lib/server'
 
 const props = defineProps<{
@@ -87,6 +107,7 @@ const props = defineProps<{
   /** the permission to read the music was given */
   allowed: boolean
 }>()
+const themes: { value: Theme; label: string }[] = [{ value: 'system', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]
 const form = reactive({ url: props.saved?.url || '', username: props.saved?.username || '', password: '', name: props.saved?.name || '' })
 const busy = ref(false)
 const error = ref('')

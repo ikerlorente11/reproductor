@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Appearance, BackHandler, Linking, PermissionsAndroid, Platform, StatusBar as RNStatusBar, StyleSheet, Text, View, useColorScheme } from 'react-native'
+import { ActivityIndicator, Appearance, BackHandler, Linking, PermissionsAndroid, Platform, StyleSheet, Text, View, useColorScheme } from 'react-native'
 import { WebView, type WebViewMessageEvent } from 'react-native-webview'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
@@ -64,6 +64,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   /** the colour the page wants behind the status bar (the player's, while it covers the screen), or null */
   const [top, setTop] = useState<string | null>(null)
+  /** the theme the page shows (chosen in its Ajustes, or the system's) */
+  const [chosen, setChosen] = useState<'light' | 'dark' | null>(null)
   const web = useRef<React.ComponentRef<typeof WebView> | null>(null)
   const canGoBack = useRef(false)
   const pending = useRef<string[]>([])
@@ -87,10 +89,13 @@ export default function App() {
       .finally(() => { SplashScreen.hideAsync().catch(() => {}); askForMusic() })
   }, [])
 
-  const scheme = system === 'dark' ? 'dark' : 'light'
+  const systemScheme = system === 'dark' ? 'dark' : 'light'
+  /** what shows: the theme chosen in the page's Ajustes, else the system's */
+  const scheme = chosen || systemScheme
   useEffect(() => { try { Promise.resolve(SystemUI.setBackgroundColorAsync(scheme === 'dark' ? DARK : LIGHT)).catch(() => {}) } catch (_) {} }, [scheme])
   // the page follows the system's theme as the app sees it (the web view's own guess is sometimes wrong)
-  useEffect(() => { web.current?.injectJavaScript(`window.__reproductorScheme && window.__reproductorScheme(${JSON.stringify(scheme)}); true;`) }, [scheme])
+  // (the system's: the one chosen in Ajustes the page applies itself over it)
+  useEffect(() => { web.current?.injectJavaScript(`window.__reproductorScheme && window.__reproductorScheme(${JSON.stringify(systemScheme)}); true;`) }, [systemScheme])
 
   // the back button goes back in the page (its views live in the hash); on the first view it leaves the app (the music goes on)
   useEffect(() => {
@@ -127,14 +132,17 @@ export default function App() {
       askForMusic()
     } else if (msg.type === 'top') {
       setTop(typeof msg.color === 'string' ? msg.color : null)
+    } else if (msg.type === 'theme') {
+      setChosen(msg.scheme === 'dark' || msg.scheme === 'light' ? msg.scheme : null)
     }
   }, [open])
 
   const background = scheme === 'dark' ? DARK : LIGHT
   return (
-    <View style={[styles.root, { backgroundColor: background, paddingTop: RNStatusBar.currentHeight || 0 }]}>
+    // the page goes under the status bar (Android's edge to edge) and keeps clear of it itself, with the web view's
+    // safe-area insets: StatusBar.currentHeight is 0 at times, and the web view tells the inset even below the bar
+    <View style={[styles.root, { backgroundColor: background }]}>
       <StatusBar style={top || scheme === 'dark' ? 'light' : 'dark'} />
-      {top ? <View style={[styles.top, { height: RNStatusBar.currentHeight || 0, backgroundColor: top }]} /> : null}
       {error ? (
         <View style={styles.center}><Text style={styles.error}>{error}</Text></View>
       ) : !page ? (
@@ -171,7 +179,6 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  top: { position: 'absolute', top: 0, left: 0, right: 0 },
   web: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   error: { color: '#1fb866', textAlign: 'center', fontSize: 15 },

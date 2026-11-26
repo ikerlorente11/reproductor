@@ -2,7 +2,7 @@
   <ReproductorShell :key="mode" :api="server?.api" :sl="server?.sl" :files="files" :device="device" :engine="null"
                     :offline="server ? offline : null" :view="view" :navigate="navigate" music-root="Música"
                     :cloud-name="server ? server.connection.name || 'tu nube' : 'Android'" :me="server ? me : undefined"
-                    :where="server ? 'tu nube' : undefined">
+                    :where="server ? 'tu nube' : undefined" :open-fetch="hostFetch">
     <template #settings>
       <SettingsView :device="device" :libraries="remotes" :version="version" :server="server?.connection || null" :server-error="serverError"
                     :saved="savedServer" :connect="connectServer" :disconnect="disconnectServer" :allowed="allowed" />
