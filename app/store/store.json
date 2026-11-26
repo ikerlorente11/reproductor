@@ -18,12 +18,12 @@
     ]
   },
   "shots": [
-    { "file": "01-inicio.jpg", "caption": "Tu música, ordenada y a mano" },
+    { "file": "01-inicio.jpg", "caption": "Lo que más escuchas, a un toque" },
     { "file": "02-reproductor.jpg", "caption": "Sigue sonando con la pantalla apagada" },
-    { "file": "03-disco.jpg", "caption": "Discos con sus portadas, en orden" },
-    { "file": "04-cola.jpg", "caption": "Ordena la cola a tu gusto" },
-    { "file": "05-biblioteca.jpg", "caption": "Artistas, listas y carpetas" },
-    { "file": "06-buscar.jpg", "caption": "Encuentra cualquier canción al momento" },
+    { "file": "03-info.jpg", "caption": "Quién canta cada canción, y mucho más" },
+    { "file": "04-widget.jpg", "caption": "Controla la música sin abrir la app" },
+    { "file": "05-biblioteca.jpg", "caption": "Listas, artistas y carpetas, por separado" },
+    { "file": "06-disco.jpg", "caption": "Discos con sus portadas, en orden" },
     { "file": "07-artista.jpg", "caption": "Todo lo de cada artista, junto" },
     { "file": "08-ajustes.jpg", "caption": "Suma tu Navidrome, Jellyfin o tu nube" }
   ]

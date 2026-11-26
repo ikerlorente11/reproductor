@@ -4,8 +4,9 @@
 
 Lee de la carpeta de la ficha:
   store.json          colores, textos, icono y lista de capturas (titular + archivo en bruto)
-  crudas/movil/*.jpg  capturas en bruto del emulador de móvil (1080x2400)
-  crudas/tablet/*.jpg capturas en bruto del emulador de tablet (1600x2560)
+  crudas/movil/*.jpg  capturas en bruto de móvil (1080x2400): la página con demo/mock-host.mjs en Chrome a 412x914 y 2,625x;
+                      las que son de Android (el widget), del emulador store_phone
+  crudas/tablet/*.jpg capturas en bruto de tablet (2560x1600 o 1600x2560): Chrome a 1280x800 y 2x
 y escribe:
   icono-512.png                    512x512, sin transparencia (Play aplica su máscara)
   grafico-destacado-1024x500.png   24 bits, sin transparencia
