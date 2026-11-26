@@ -1,5 +1,8 @@
 <template>
-  <div :class="['rp', { 'rp-phone': phone }]">
+  <div :class="['rp', { 'rp-phone': phone && !mini, 'rp-minimode': mini }]">
+    <!-- the desktop's mini player: the app made a small card (its window), everything else kept as it is -->
+    <MiniPlayer v-if="mini" />
+    <template v-else>
     <aside v-if="!phone" class="rp-side" aria-label="Tu biblioteca">
       <div class="rp-brand">
         <span class="rp-brand-mark" aria-hidden="true"><i class="rp-i rp-i-music" aria-hidden="true"></i></span>
@@ -175,6 +178,7 @@
         <span class="rp-tab-name">{{ t.label }}</span>
       </a>
     </nav>
+    </template>
     <div v-if="removing" class="rp-modal" @click.self="!removing.busy && answerRemove(false)">
       <div class="rp-dialog" role="dialog" :aria-label="removing.title">
         <h2 class="rp-h2">{{ removing.title }}</h2>
@@ -213,10 +217,11 @@ import { createList, mine } from '../lib/mine'
 import { Soundlift, soundliftState } from '../lib/soundlift'
 import { isAudioName, isBusy, libraryArtists, releaseSongs, type Song } from '../lib/library'
 import { nowPlaying, play, setResolver, setSourceOf } from '../lib/player'
+import { listKey } from '../lib/sources'
 import { control, startConnect, stopConnect, type Me } from '../lib/connect'
 import { startHandoff, stopHandoff } from '../lib/handoff'
 import HandoffBanner from './HandoffBanner.vue'
-import { STORE, createState, queryFromView, type Files, type LibraryEntry, type RemoveRequest, type View } from '../lib/store'
+import { STORE, createState, queryFromView, type Files, type LibraryEntry, type MiniWindow, type RemoveRequest, type View } from '../lib/store'
 import '../lib/ui.css'
 import HomeView from './HomeView.vue'
 import SearchView from './SearchView.vue'
@@ -243,6 +248,7 @@ import LyricsPanel from './LyricsPanel.vue'
 import QueuePanel from './QueuePanel.vue'
 import DevicesPanel from './DevicesPanel.vue'
 import SongInfoPanel from './SongInfoPanel.vue'
+import MiniPlayer from './MiniPlayer.vue'
 import DeviceDownloadView from './DeviceDownloadView.vue'
 
 /**
@@ -284,6 +290,9 @@ const props = defineProps<{
   oneTab?: boolean
   /** the app's fetch that reaches any site (not the web's): Deezer is asked a song's info with it, server or not */
   openFetch?: (url: string, init?: RequestInit) => Promise<Response>
+  /** shown as the mini player (the desktop's window made a small card), and how the app does it with its window */
+  mini?: boolean
+  miniWindow?: MiniWindow
 }>()
 
 const server = !!props.api
@@ -531,7 +540,7 @@ async function pruneFolders(paths: string[]) {
 }
 
 const library = reactive({ artists, lists, folders: computed(() => allFolders.value), loaded })
-provide(STORE, { api, server, device, engine, offline, musicRoot, cloudName, where, files, openFetch: props.openFetch || null, library, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
+provide(STORE, { api, server, device, engine, offline, musicRoot, cloudName, where, files, openFetch: props.openFetch || null, mini: props.miniWindow || null, library, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
 
 // ---- folders of the music root (the music that is not by followed artist yet) ----
 const folders = ref<{ path: string; name: string }[]>([])
@@ -582,10 +591,10 @@ setResolver((song) => files.play(song))
 // what is played from a list's page counts for that list («Lo que más escuchas» on Inicio)
 setSourceOf(() => {
   const v = view.value
-  if (v.v === 'playlist') return { kind: 'list', key: `playlist:${v.id}`, name: state.playlists.find((p) => p.id === v.id)?.name || '', view: v }
-  if (v.v === 'llist') return { kind: 'list', key: `llist:${v.id}`, name: mine.lists.find((l) => l.id === v.id)?.name || '', view: v }
-  if (v.v === 'likes') return { kind: 'list', key: 'likes', name: 'Me gusta', view: v }
-  return null
+  const key = listKey(v)
+  if (!key) return null
+  const name = v.v === 'playlist' ? state.playlists.find((p) => p.id === v.id)?.name : v.v === 'llist' ? mine.lists.find((l) => l.id === v.id)?.name : 'Me gusta'
+  return { kind: 'list', key, name: name || '', view: v }
 })
 
 // ---- keep an eye on downloads while something is going on ----

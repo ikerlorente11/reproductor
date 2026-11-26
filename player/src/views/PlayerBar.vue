@@ -123,6 +123,7 @@
       <button v-if="!far" :class="['rp-pbtn', { on: panel === 'info' }]" title="Información de la canción" :aria-pressed="panel === 'info'" @click="togglePanel('info')"><i class="rp-i rp-i-info" aria-hidden="true"></i></button>
       <button v-if="!far" :class="['rp-pbtn', { on: showLyrics }]" title="Letra" :aria-pressed="showLyrics" @click="togglePanel('lyrics')"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
       <button v-if="!far" :class="['rp-pbtn', { on: showQueue }]" title="Cola" @click="togglePanel('queue')"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
+      <button v-if="mini" class="rp-pbtn" title="Mini reproductor: una tarjeta pequeña, siempre encima, donde quieras" @click="mini.enter()"><i class="rp-i rp-i-mini" aria-hidden="true"></i></button>
       <span class="rp-muted"><i class="rp-i rp-i-volume" aria-hidden="true"></i></span>
       <input class="rp-vol" type="range" min="0" max="1" step="0.02" :value="view.volume" aria-label="Volumen"
              @input="control.volume(($event.target as HTMLInputElement).valueAsNumber)" />
@@ -147,7 +148,7 @@ import DevicesPanel from './DevicesPanel.vue'
 import SongInfoPanel from './SongInfoPanel.vue'
 
 defineOptions({ inheritAttrs: false })
-const { go, server, device } = useStore()
+const { go, server, device, mini } = useStore()
 /** Driving another device (connect.ts): the bar shows what plays there and its buttons act there. */
 const far = computed(() => !!connect.controlling)
 const shown = computed(() => (far.value ? remote.value?.song || { title: 'Sin nada sonando', artist: '', album: '', cover: null } : song.value))

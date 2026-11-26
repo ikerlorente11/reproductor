@@ -23,10 +23,9 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { playlistSongs, releaseSongs, type Song } from '../lib/library'
-import { mine, topFavorites, type Favorite, type PlaySource } from '../lib/mine'
+import { mine, topFavorites, type Favorite } from '../lib/mine'
 import { isPhone } from '../lib/phone'
-import { play } from '../lib/player'
+import { playAll } from '../lib/sources'
 import { queryFromView, useStore, type LibraryEntry, type View } from '../lib/store'
 
 /**
@@ -66,26 +65,9 @@ const starting = ref('')
 async function start(f: Card) {
   starting.value = f.key
   try {
-    const songs = await songsOf(f.view)
-    if (!songs.length) { notify(`«${f.name}» no tiene nada que reproducir aquí.`, true); return }
-    const source: PlaySource | null = f.kind === 'list' ? { kind: 'list', key: f.key, name: f.name, view: f.view } : null
-    play(songs, null, undefined, source)
+    if (!(await playAll(f.view, f.name, api, device))) notify(`«${f.name}» no tiene nada que reproducir aquí.`, true)
   } catch (err: any) {
     notify(err?.message || String(err), true)
   } finally { starting.value = '' }
-}
-async function songsOf(v: View): Promise<Song[]> {
-  if (v.v === 'playlist') return playlistSongs((await api.playlist(v.id)).songs)
-  if (v.v === 'llist') return mine.lists.find((l) => l.id === v.id)?.songs || []
-  if (v.v === 'likes') return mine.likes.map((l) => l.song)
-  if (v.v === 'artist') {
-    const page = await api.artist(v.id, true)
-    return page.releases.filter((r) => r.status === 'done').sort((a, b) => (a.date || '').localeCompare(b.date || '')).flatMap(releaseSongs)
-  }
-  if (v.v === 'lartist' && device) {
-    const a = device.artists.find((x) => x.name === v.name)
-    return a ? device.songs(a.tracks) : []
-  }
-  return []
 }
 </script>
