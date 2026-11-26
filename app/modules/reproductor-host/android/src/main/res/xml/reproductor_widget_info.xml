@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The player as a widget (PlayerWidget.kt): four by two at first, resizable from one cell to the whole screen; narrow
-     it is the cover and play, wider the song on the left and its buttons on the right, sized to it. -->
+<!-- The player as a widget (PlayerWidget.kt): four by two at first, resizable from one cell to the whole screen; small
+     it is the cover and play, narrow but tall the song over its buttons, wider the song on the left and its buttons on
+     the right, sized to it. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
     android:minHeight="110dp"

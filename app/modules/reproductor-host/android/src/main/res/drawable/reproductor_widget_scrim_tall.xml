@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Over the cover of the tall widget: darker at the top, where the title is, and at the bottom, under the buttons. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <gradient android:angle="270" android:startColor="#EB141417" android:centerColor="#A6141417" android:endColor="#D9141417" />
+  <corners android:radius="20dp" />
+</shape>

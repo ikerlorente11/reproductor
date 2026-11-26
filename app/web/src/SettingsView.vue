@@ -66,6 +66,10 @@
     <section class="ra-box">
       <h2>El Reproductor</h2>
       <p class="rp-muted rp-small">Versión {{ version || '—' }}.</p>
+      <h3 class="ra-news-h">Novedades de la 0.2.1</h3>
+      <ul class="ra-news">
+        <li>El widget, estrecho (dos celdas de ancho): la canción arriba y los botones debajo, grandes, en vez de apretados al lado.</li>
+      </ul>
       <h3 class="ra-news-h">Novedades de la 0.2.0</h3>
       <ul class="ra-news">
         <li>Widget para la pantalla de inicio: lo que suena, sus botones y por dónde va, del tamaño que quieras. Funciona con la app cerrada.</li>

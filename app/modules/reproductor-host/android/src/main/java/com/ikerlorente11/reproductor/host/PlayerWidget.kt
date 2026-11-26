@@ -60,6 +60,11 @@ class PlayerWidget : AppWidgetProvider() {
         private const val ACTION = "com.ikerlorente11.reproductor.host.WIDGET"
         private const val EXTRA = "do"
         private const val COVER_PX = 360
+        /** dp from which the song and its buttons go side by side, and the height from which, narrower, one over the other */
+        private const val WIDE_FROM = 250
+        private const val TALL_FROM = 140
+        /** the buttons' row, in play buttons: play, two of ¾ and two gaps of ⅕ */
+        private const val BUTTONS = 1f + 2 * 0.75f + 2 * 0.2f
 
         private val main = Handler(Looper.getMainLooper())
 
@@ -95,18 +100,28 @@ class PlayerWidget : AppWidgetProvider() {
             val cover = Covers.get(context, now.cover)
             for (id in ids) {
                 val options = manager.getAppWidgetOptions(id)
-                val views = build(context, layoutFor(options), now, cover)
-                if (layoutFor(options) == R.layout.reproductor_widget_wide) fit(context, views, options)
+                val layout = layoutFor(options)
+                val views = build(context, layout, now, cover)
+                when (layout) {
+                    R.layout.reproductor_widget_wide -> fit(context, views, options)
+                    R.layout.reproductor_widget_tall -> fitTall(context, views, options)
+                }
                 try { manager.updateAppWidget(id, views) } catch (e: Exception) { Log.w("reproductor", "widget: ${e.message}") }
             }
         }
 
         /** The layout for the size the launcher gives (dp; the portrait width and height), told again on every resize.
-         *  Chosen here, not with Android 12's layouts by size: some launchers (MIUI's) do not pick among them. */
+         *  Chosen here, not with Android 12's layouts by size: some launchers (MIUI's) do not pick among them.
+         *  Side by side, the song and its buttons need some 250 dp (four cells, or three): narrower (two cells, ~170 dp)
+         *  the buttons go under the song if the height lets them, and if not it is the cover and play. */
         private fun layoutFor(options: Bundle): Int {
             val w = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
             val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110)
-            return if (w < 150) R.layout.reproductor_widget_small else R.layout.reproductor_widget_wide
+            return when {
+                w >= WIDE_FROM -> R.layout.reproductor_widget_wide
+                w >= 150 && h >= TALL_FROM -> R.layout.reproductor_widget_tall
+                else -> R.layout.reproductor_widget_small
+            }
         }
 
         /**
@@ -118,13 +133,33 @@ class PlayerWidget : AppWidgetProvider() {
             val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110).toFloat()
             val content = h - 35f                  // the paddings (10 + 12) and the progress bar with its margin (5 + 8)
             val half = (w - 32f) / 2f              // the side paddings (16 + 16)
-            // three buttons: play, two of ¾, and two gaps of ⅕ of play
-            val play = minOf(content, half / (1f + 2 * 0.75f + 2 * 0.2f)).coerceIn(32f, 76f)
-            val side = play * 0.75f
+            val play = minOf(content, half / BUTTONS).coerceIn(32f, 76f)
             val title = (content * 0.18f).coerceIn(13f, 22f)
             v.setTextViewTextSize(R.id.rw_title, TypedValue.COMPLEX_UNIT_SP, title)
             v.setTextViewTextSize(R.id.rw_artist, TypedValue.COMPLEX_UNIT_SP, title * 0.8f)
+            buttons(context, v, play)
+        }
+
+        /**
+         * The tall layout sized to the widget: the title (up to two lines) and artist with the width, and the buttons as
+         * big as the whole width and the height left under the text let them.
+         */
+        private fun fitTall(context: Context, v: RemoteViews, options: Bundle) {
+            val w = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 170).toFloat()
+            val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 170).toFloat()
+            val content = h - 43f                  // the paddings (14 + 12) and the progress bar with its margin (5 + 12)
+            val title = (w * 0.095f).coerceIn(13f, 20f)
+            val text = title * 1.35f * 2 + title * 0.8f * 1.35f + 2f   // two lines of title and one of artist
+            val play = minOf((w - 28f) / BUTTONS, content - text - 6f).coerceIn(32f, 72f)
+            v.setTextViewTextSize(R.id.rw_title, TypedValue.COMPLEX_UNIT_SP, title)
+            v.setTextViewTextSize(R.id.rw_artist, TypedValue.COMPLEX_UNIT_SP, title * 0.8f)
+            buttons(context, v, play)
+        }
+
+        /** Play as big as given, the others ¾ of it, with gaps of ⅕ of play (Android 12 and on: sizes set from here). */
+        private fun buttons(context: Context, v: RemoteViews, play: Float) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+            val side = play * 0.75f
             val px = context.resources.displayMetrics.density
             for ((id, size) in listOf(R.id.rw_play to play, R.id.rw_prev to side, R.id.rw_next to side)) {
                 v.setViewLayoutWidth(id, size, TypedValue.COMPLEX_UNIT_DIP)
@@ -160,8 +195,8 @@ class PlayerWidget : AppWidgetProvider() {
                 v.setViewVisibility(R.id.rw_cover_none, View.GONE)
             } else {
                 v.setViewVisibility(R.id.rw_cover, View.INVISIBLE)
-                // wide, the card is plain; narrow, the app's note
-                v.setViewVisibility(R.id.rw_cover_none, if (layout == R.layout.reproductor_widget_wide) View.GONE else View.VISIBLE)
+                // with the song's name, the card is plain; at its smallest, the app's note
+                v.setViewVisibility(R.id.rw_cover_none, if (layout == R.layout.reproductor_widget_small) View.VISIBLE else View.GONE)
             }
             v.setProgressBar(R.id.rw_progress, 1000, now.progress, false)
             v.setImageViewResource(R.id.rw_play, if (now.playing) R.drawable.reproductor_widget_pause else R.drawable.reproductor_widget_play)
@@ -178,7 +213,7 @@ class PlayerWidget : AppWidgetProvider() {
                 v.setOnClickPendingIntent(R.id.rw_prev, control(context, "prev"))
                 v.setOnClickPendingIntent(R.id.rw_next, control(context, "next"))
             }
-            if (layout == R.layout.reproductor_widget_wide) v.setOnClickPendingIntent(R.id.rw_open, open(context))
+            if (layout != R.layout.reproductor_widget_small) v.setOnClickPendingIntent(R.id.rw_open, open(context))
             return v
         }
 
