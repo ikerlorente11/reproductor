@@ -53,10 +53,11 @@ class HostServer(private val context: Context, port: Int) : NanoHTTPD("127.0.0.1
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
-    private val userAgent: String by lazy {
-        val version = try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Exception) { null }
-        "ElReproductor/${version ?: VERSION} (Android)"
+    /** the installed app's version (app.json's), which Settings shows */
+    private val appVersion: String by lazy {
+        try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Exception) { null } ?: VERSION
     }
+    private val userAgent: String by lazy { "ElReproductor/$appVersion (Android)" }
 
     override fun start() {
         super.start(SOCKET_READ_TIMEOUT, false)
@@ -134,7 +135,7 @@ class HostServer(private val context: Context, port: Int) : NanoHTTPD("127.0.0.1
     }
 
     private fun info(): JSONObject = JSONObject()
-        .put("version", VERSION)
+        .put("version", appVersion)
         .put("device", deviceName())
         .put("library", library.allowed())
         .put("music", settings.musicDir().absolutePath)
