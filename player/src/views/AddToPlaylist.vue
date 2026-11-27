@@ -115,8 +115,8 @@ const choices = ref<Choice[] | null>(null)
 
 const what = computed(() => ({ song: 'la canción', release: 'el disco', artist: 'el artista' })[props.kind])
 const title = computed(() => `Añadir ${what.value} a una lista`)
-const hint = computed(() => (props.kind === 'artist' && !props.followed ? 'Aún no sigues a este artista: se empezará a seguir y se bajará su música.'
-  : props.kind !== 'artist' ? 'Si aún no lo tienes, se baja (solo esto, sin seguir a nadie).' : ''))
+const hint = computed(() => (props.kind === 'artist' && !props.followed ? 'Aún no descargas a este artista: se empezará a bajar su música y lo nuevo que saque.'
+  : props.kind !== 'artist' ? 'Si aún no lo tienes, se baja (solo esto, sin descargar todo lo del artista).' : ''))
 
 function onOutside(e: MouseEvent) {
   if (root.value && !root.value.contains(e.target as Node)) close()

@@ -11,7 +11,7 @@
     <p v-if="error" class="rp-banner rp-banner-error">{{ error }}</p>
     <p v-else-if="busy" class="rp-muted"><span class="rp-spin"></span> Buscando…</p>
     <p v-else-if="query.trim() && searched && !count" class="rp-muted">Nada con «{{ query.trim() }}» en el catálogo.</p>
-    <p v-else-if="!query.trim()" class="rp-muted">Busca en el catálogo de Deezer. Al seguir un artista, o añadir algo suyo a una lista, se baja su música a {{ where }}.</p>
+    <p v-else-if="!query.trim()" class="rp-muted">Busca en el catálogo de Deezer. Sigue a un artista o guarda un disco para tenerlo en tu biblioteca, sin descargar nada; para tenerlo en {{ where }}, descárgalo.</p>
 
     <h2 v-if="tab === 'all' && artists.length" class="rp-h2 rp-search-sec">Artistas <a v-if="artists.length > LIMIT.artists" href="#" class="rp-small rp-muted" @click.prevent="setTab('artists')">Ver todos</a></h2>
     <ul v-if="(tab === 'all' || tab === 'artists') && artists.length" class="rp-results">
@@ -24,10 +24,10 @@
             <small class="rp-muted">{{ [fmtFans(a.fans), a.albums ? `${a.albums} lanzamientos` : ''].filter(Boolean).join(' · ') }}</small>
           </span>
         </a>
-        <span v-if="followed(a.id)" class="rp-badge rp-badge-done">Siguiendo</span>
-        <button v-else class="rp-btn rp-small" :disabled="following === a.id" title="Seguir y bajar toda su discografía" @click="quickFollow(a)">
-          <span v-if="following === a.id" class="rp-spin"></span> Seguir
-        </button>
+        <span v-if="downloaded(a.id)" class="rp-badge rp-badge-done" title="Se baja su música y lo nuevo que saque">Descargando</span>
+        <button :class="['rp-btn', 'rp-small', 'rp-state', { on: isSaved('artist', a.id) }]"
+                :title="isSaved('artist', a.id) ? 'Lo sigues: está en tu biblioteca. Pulsa para dejar de seguirlo' : 'Seguir: a tu biblioteca, sin descargar nada'"
+                @click="quickFollow(a)">{{ isSaved('artist', a.id) ? 'Siguiendo' : 'Seguir' }}</button>
       </li>
     </ul>
 
@@ -71,9 +71,10 @@
 </template>
 
 <script setup lang="ts">
+import { isSaved, toggleSaved } from '../lib/saved'
 import { computed, onMounted, ref, watch } from 'vue'
 import type { AlbumHit, Artist, DeezerPlaylistHit, TrackHit } from '../lib/api'
-import { DEFAULT_RULES, fmtFans, kindLabel, statusLabel, fmtDate } from '../lib/library'
+import { fmtFans, kindLabel, statusLabel, fmtDate } from '../lib/library'
 import { useStore } from '../lib/store'
 import AddToPlaylist from './AddToPlaylist.vue'
 import TrackList from './TrackList.vue'
@@ -85,7 +86,7 @@ const TABS: { value: Tab; label: string }[] = [
 ]
 
 const props = defineProps<{ q: string; tab?: string }>()
-const { api, state, go, notify, refreshFollows, where } = useStore()
+const { api, state, go, notify, where } = useStore()
 const input = ref<HTMLInputElement>()
 const query = ref(props.q)
 const tab = ref<Tab>((TABS.some((t) => t.value === props.tab) ? props.tab : 'all') as Tab)
@@ -100,11 +101,10 @@ const downloading = ref<number | null>(null)
 const busy = ref(false)
 const searched = ref('')
 const error = ref('')
-const following = ref<number | null>(null)
 let timer: any = null
 let seq = 0
 
-const followed = (id: number) => state.follows.some((f) => f.artist_id === id)
+const downloaded = (id: number) => state.follows.some((f) => f.artist_id === id)
 const count = computed(() => (tab.value === 'all'
   ? artists.value.length + albums.value.length + lists.value.length + tracks.value.length
   : ({ artists: artists.value, albums: albums.value, playlists: lists.value, tracks: tracks.value })[tab.value].length))
@@ -142,17 +142,10 @@ function runNow() { clearTimeout(timer); run() }
 function setTab(t: Tab) { tab.value = t; runNow() }
 watch(query, () => { clearTimeout(timer); timer = setTimeout(run, 350) })
 
-async function quickFollow(a: Artist) {
-  following.value = a.id
-  try {
-    await api.follow(a.id, DEFAULT_RULES)
-    await refreshFollows()
-    notify(`Sigues a ${a.name}: se va a bajar su discografía.`)
-  } catch (err: any) {
-    notify(err?.message || String(err), true)
-  } finally {
-    following.value = null
-  }
+/** Following: in one's library, without downloading anything (saved.ts). */
+function quickFollow(a: Artist) {
+  const on = toggleSaved('artist', a.id, { name: a.name, picture: a.picture, note: 'Artista' })
+  notify(on ? `Sigues a ${a.name}: está en tu biblioteca.` : `Ya no sigues a ${a.name}.`)
 }
 function openAlbum(a: AlbumHit) { go({ v: 'release', id: a.id }) }
 async function downloadAlbum(a: AlbumHit) {

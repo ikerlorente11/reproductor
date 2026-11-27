@@ -5,7 +5,7 @@
     <div v-else-if="!status.installed" class="rp-empty">
       <span class="rp-empty-icon"><i class="rp-i rp-i-download" aria-hidden="true"></i></span>
       <p><strong>Busca artistas, discos y canciones, aunque no los tengas, y bájalos a este equipo.</strong><br />
-        Sigue a tus artistas y lo que saquen llegará solo; haz listas que se completan solas. Se elige siempre la mejor
+        Descarga a tus artistas y lo que saquen llegará solo; haz listas que se completan solas. Se elige siempre la mejor
         versión (sin directos, versiones ni grabaciones malas), con sus etiquetas y su portada.</p>
       <p class="rp-muted rp-small">Hace falta el motor de descargas, que se instala aparte<template v-if="engine.state.latest"> ({{ fmtBytes(engine.state.latest.size) }})</template>.
         Todo ocurre en este equipo.</p>

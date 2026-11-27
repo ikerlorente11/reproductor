@@ -740,6 +740,9 @@ button.rp-dev:hover { background: var(--rp-surface-2); }
 .rp-phone .rp-hero-text { flex: none; gap: 4px; }
 .rp-phone .rp-hero-actions { gap: 8px; }
 .rp-phone .rp-hero-actions .rp-round-btn { order: 10; margin-left: auto; width: 54px; height: 54px; }
+/* shuffle, right beside ▶ (as Spotify on a phone), not apart on the left */
+.rp-phone .rp-hero-actions .rp-act[aria-label="Reproducir en orden aleatorio"] { order: 9; margin-left: auto; }
+.rp-phone .rp-hero-actions:has(.rp-act[aria-label="Reproducir en orden aleatorio"]) .rp-round-btn { margin-left: 0; }
 .rp-phone .rp-btn { min-height: 36px; }
 
 .rp-iconbtn { width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%;

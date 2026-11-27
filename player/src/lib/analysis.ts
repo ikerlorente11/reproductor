@@ -90,10 +90,30 @@ function queued<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 // ---- the measure ----
-async function measure(url: string): Promise<Analysis | null> {
+/** The whole file: an app that relays its songs (the desktop's cloud, YouTube Music) gives them by pieces (206): the
+ *  rest is asked for until its whole size. */
+async function fetchWhole(url: string): Promise<ArrayBuffer | null> {
   const res = await fetch(url)
   if (!res.ok) return null
-  const data = await res.arrayBuffer()
+  const first = new Uint8Array(await res.arrayBuffer())
+  const total = Number(res.headers.get('Content-Range')?.split('/')[1] || 0)
+  if (res.status !== 206 || !total || first.length >= total) return first.buffer
+  const whole = new Uint8Array(total)
+  whole.set(first)
+  let got = first.length
+  while (got < total) {
+    const r = await fetch(url, { headers: { Range: `bytes=${got}-` } })
+    if (!r.ok) return null
+    const piece = new Uint8Array(await r.arrayBuffer())
+    if (!piece.length) return null
+    whole.set(piece.subarray(0, total - got), got)
+    got += piece.length
+  }
+  return whole.buffer
+}
+async function measure(url: string): Promise<Analysis | null> {
+  const data = await fetchWhole(url)
+  if (!data) return null
   const Ctx = (globalThis as any).OfflineAudioContext || (globalThis as any).webkitOfflineAudioContext
   if (!Ctx) return null
   // decoded at a low rate: the context resamples it

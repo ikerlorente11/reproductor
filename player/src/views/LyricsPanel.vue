@@ -61,7 +61,9 @@ import { useStore } from '../lib/store'
 import { localLyrics, saveLocalOffset } from '../lib/lyrics'
 
 const emit = defineEmits<{ close: [] }>()
-const { api, server, device, notify } = useStore()
+const { api, server: withServer, pocket, device, notify } = useStore()
+/** a server that has lyrics (not the app's own catalogue, pocket.ts) */
+const server = withServer && !pocket
 /** this lyrics' shift is kept on this device (they did not come from the server) */
 const localOnly = computed(() => !!lyrics.value && (!server || lyrics.value.source === 'archivo .lrc'))
 const lyrics = ref<Lyrics | null>(null)

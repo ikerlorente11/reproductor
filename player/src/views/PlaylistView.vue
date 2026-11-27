@@ -22,8 +22,9 @@
             · <span :title="pl.nd_error || ''">{{ pl.nd_error ? 'No se pudo pasar a Navidrome' : pl.in_navidrome ? 'También en Navidrome' : 'Pasando a Navidrome…' }}</span>
           </span>
           <div class="rp-hero-actions">
-            <button v-if="songs.length" class="rp-btn rp-primary rp-round-btn" title="Reproducir" @click="play(songs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-            <button v-if="songs.length" class="rp-act" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
+            <button v-if="songs.length || toListenToo" class="rp-btn rp-primary rp-round-btn" title="Reproducir" :disabled="gathering" @click="playAll(false)">
+              <span v-if="gathering" class="rp-spin"></span><i v-else class="rp-i rp-i-play" aria-hidden="true"></i></button>
+            <button v-if="songs.length || toListenToo" class="rp-act" title="Aleatorio" aria-label="Reproducir en orden aleatorio" :disabled="gathering" @click="playAll(true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
             <OfflineButton :paths="songs.map((s) => s.path)" :list-id="pl.id" />
             <ActionMenu :items="menu" />
           </div>
@@ -133,14 +134,14 @@ import ActionMenu, { type MenuAction } from './ActionMenu.vue'
 import OfflineButton, { keepList } from './OfflineButton.vue'
 import { isPhone as phone, toggleRow } from '../lib/phone'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import type { Playlist, PlaylistEntry, PlaylistSong, Release } from '../lib/api'
-import { downloadState, fmtTime, isBusy, kindLabel, playlistSongs, fmtDate } from '../lib/library'
+import type { Playlist, PlaylistEntry, PlaylistSong, Release, TrackHit } from '../lib/api'
+import { downloadState, fmtTime, isBusy, kindLabel, playlistSongs, fmtDate, playableSongs, toListen, type Song } from '../lib/library'
 import { nowPlaying, play, player } from '../lib/player'
 import { useStore } from '../lib/store'
 
 const KIND = { song: 'Canción', release: 'Disco', artist: 'Artista', file: 'Archivo' }
 const props = defineProps<{ id: number }>()
-const { api, state, go, notify, refreshPlaylists, where, offline } = useStore()
+const { api, state, go, notify, refreshPlaylists, where, offline, files: songFiles } = useStore()
 const pl = ref<Playlist | null>(null)
 const error = ref('')
 const renaming = ref(false)
@@ -149,6 +150,36 @@ const nameInput = ref<HTMLInputElement>()
 const askDelete = ref(false)
 
 const songs = computed(() => playlistSongs(pl.value?.songs || []))
+// ---- ▶ and shuffle: what is in the cloud, and (an app that can) what is still pending, straight from YouTube Music ----
+/** the list has entries not in the cloud yet, and the app can listen to them */
+const toListenToo = computed(() => !!songFiles?.stream && !!pl.value?.entries.some((e) => e.pending))
+const gathering = ref(false)
+/** The pending entries' songs: a song as it is, an album's songs, an artist's most listened (asked to the catalogue). */
+async function songsToListen(): Promise<Song[]> {
+  const pending = (pl.value?.entries || []).filter((e) => e.pending)
+  const lists = await Promise.all(pending.map(async (e): Promise<Song[]> => {
+    try {
+      if (e.kind === 'song') {
+        const hit = { id: e.deezer_id, title: e.title, artist_name: (e.subtitle || '').split(' · ')[0], album_title: '', cover: e.cover, duration: 0,
+                      artist_id: e.artist_id, album_id: e.release_id, have: null, file: null } as TrackHit
+        return [toListen(hit)]
+      }
+      if (e.kind === 'release') return playableSongs((await api.album(e.deezer_id)).songs, true).filter((s) => s.stream)
+      if (e.kind === 'artist') return playableSongs(await api.artistTop(e.deezer_id, 10), true).filter((s) => s.stream)
+    } catch (_) { /* that one, left out */ }
+    return []
+  }))
+  return lists.flat()
+}
+async function playAll(shuffle: boolean) {
+  if (!toListenToo.value) { play(songs.value, null, shuffle); return }
+  gathering.value = true
+  try {
+    const more = await songsToListen()
+    const seen = new Set(songs.value.map((s) => s.trackId).filter(Boolean))
+    play([...songs.value, ...more.filter((s) => !seen.has(s.trackId))], null, shuffle)
+  } finally { gathering.value = false }
+}
 /** the header's «⋯»: keep it on the device, rename it, delete it */
 const menu = computed<(MenuAction | 'sep')[]>(() => {
   const id = pl.value?.id || 0

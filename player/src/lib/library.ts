@@ -141,6 +141,9 @@ export interface Song {
   /** a device song's album and album artist (where the player's title and artist lead) */
   albumKey?: string
   artistName?: string
+  /** a song one does not have, heard straight from YouTube Music (an app that can: Files.stream), found by these
+   *  (its ISRC first: the recording's own code, which finds that very version) */
+  stream?: { artist: string; title: string; duration: number; isrc?: string | null }
 }
 
 /** The playable songs of a downloaded release, with Deezer's durations when the lists line up. */
@@ -160,6 +163,20 @@ export function heldSongs(hits: TrackHit[]): Song[] {
     key: t.file.path, path: t.file.path, title: t.title, artist: t.artist_name || t.file.artist, album: t.file.album,
     cover: t.file.cover || t.cover, duration: t.duration, releaseId: t.file.release_id, trackId: t.id, albumId: t.album_id, artistId: t.artist_id
   }] : []))
+}
+
+/** A song of the catalogue one does not have, to listen to straight from YouTube Music (an app that can). */
+export function toListen(t: TrackHit): Song {
+  return {
+    key: `yt:${t.id}`, path: '', title: t.title, artist: t.artist_name, album: t.album_title, cover: t.cover, duration: t.duration,
+    trackId: t.id, artistId: t.artist_id, albumId: t.album_id, stream: { artist: t.artist_name, title: t.title, duration: t.duration, isrc: t.isrc || null }
+  }
+}
+/** The songs of a list of the catalogue (an album, a Deezer playlist, an artist's most listened): those one has; with
+ *  `stream` (an app that can listen to the others), the others too, each in its place. */
+export function playableSongs(hits: TrackHit[], stream: boolean): Song[] {
+  const held = new Map(heldSongs(hits).map((s) => [s.trackId, s]))
+  return stream ? hits.map((t) => held.get(t.id) || toListen(t)) : [...held.values()]
 }
 
 /** Where a release card or row leads: its album (a loose song: the album it is from). */

@@ -2,7 +2,7 @@
   <section class="rp-page">
     <header class="rp-page-head"><h1 class="rp-h1">Descargas</h1></header>
     <p v-if="!d.active.length && !d.failed.length && !d.recent.length" class="rp-muted">
-      Nada bajando ahora mismo. Lo que pidas (seguir a un artista, ↓ en un disco o una canción) aparecerá aquí con su progreso.
+      Nada bajando ahora mismo. Lo que pidas (descargar un artista, ↓ en un disco o una canción) aparecerá aquí con su progreso.
     </p>
 
     <section v-if="d.active.length" class="rp-section">

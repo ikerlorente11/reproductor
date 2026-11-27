@@ -44,6 +44,10 @@ export interface Files {
   remove(path: string): Promise<void>
   /** a URL the audio element can play */
   play(song: Song): Promise<Playable>
+  /** it can play a song one does not have (`Song.stream`), straight from YouTube Music */
+  stream?: boolean
+  /** those songs (the ones a page shows) are got ready beforehand, so they sound at once when played */
+  prepare?(songs: Song[]): void
 }
 
 export interface Store {
@@ -51,6 +55,9 @@ export interface Store {
   api: Api
   /** connected to a server of El Reproductor (else only the device's music and what is yours on it) */
   server: boolean
+  /** no server, but the app answers the catalogue's pages itself (pocket.ts): searching Deezer, listening and
+   *  downloading to the device; `server` is true then too (those pages show), what only a server has does not */
+  pocket: boolean
   /** the music of this device, when the platform has some (the apps) */
   device: DeviceLibrary | null
   /** an app's own download engine (soundlift on the device), when it has one */
@@ -69,7 +76,7 @@ export interface Store {
   /** the mini player's window, when the app has one (the desktop's) */
   mini: MiniWindow | null
   /** the library's lists, artists and folders (what the sidebar shows), and whether they have loaded */
-  library: { artists: LibraryEntry[]; lists: LibraryEntry[]; folders: LibraryEntry[]; loaded: boolean }
+  library: { artists: LibraryEntry[]; albums: LibraryEntry[]; lists: LibraryEntry[]; folders: LibraryEntry[]; loaded: boolean }
   state: { follows: Follow[]; playlists: PlaylistSummary[]; downloads: Downloads; albums: Release[]; loaded: boolean; connected: boolean; error: string }
   refreshFollows: () => Promise<void>
   refreshPlaylists: () => Promise<void>

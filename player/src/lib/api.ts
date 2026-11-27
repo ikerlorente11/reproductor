@@ -362,6 +362,8 @@ export class Api {
 
   /** how requests go out (an app sets its own) */
   fetch: Fetch = (input, init) => globalThis.fetch(input, init)
+  /** answered in the app itself, without a server (pocket.ts): only the catalogue and what is downloaded to the device */
+  pocket = false
 
   static bearer(token: () => string): Auth { return () => `Bearer ${token()}` }
   static basic(user: string, password: string): Auth {
@@ -495,6 +497,11 @@ export class Api {
   }
   sessions() {
     return this.call<{ device: string; name: string; kind: string; updated: number; session: any }[]>('/api/sessions')
+  }
+  // ---- the library kept without downloading (saved.ts): artists followed, albums and Deezer playlists saved ----
+  saved() { return this.call<{ kind: 'artist' | 'album' | 'dzlist'; id: number; data: any; updated: number; gone: boolean }[]>('/api/saved') }
+  putSaved(items: object[]) {
+    return this.call<{ kind: 'artist' | 'album' | 'dzlist'; id: number; data: any; updated: number; gone: boolean }[]>('/api/saved', { method: 'PUT', body: JSON.stringify({ items }) })
   }
   // ---- the player's settings, the same on every device of the user (prefs.ts) ----
   prefs() { return this.call<{ prefs: Record<string, any>; updated: number }>('/api/prefs') }

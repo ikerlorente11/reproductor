@@ -8,9 +8,9 @@
       </button>
     </header>
 
-    <div v-if="state.loaded && !state.follows.length" class="rp-empty">
+    <div v-if="state.loaded && !state.follows.length && !savedArtists.length" class="rp-empty">
       <span class="rp-empty-icon"><i class="rp-i rp-i-music" aria-hidden="true"></i></span>
-      <p><strong>Sigue a tus artistas</strong> y su música se bajará sola a {{ where }}, también lo que saquen a partir de ahora.</p>
+      <p><strong>Sigue a tus artistas</strong> y suenan al momento, sin descargar nada. Si quieres tenerlos en {{ where }}, «Descargar» baja su música y lo nuevo que saquen.</p>
       <button class="rp-btn rp-primary" @click="go({ v: 'search' })"><i class="rp-i rp-i-search" aria-hidden="true"></i> Buscar artistas</button>
     </div>
 
@@ -68,6 +68,7 @@
 </template>
 
 <script setup lang="ts">
+import { savedArtists } from '../lib/saved'
 import { computed, onMounted, ref, watch } from 'vue'
 import type { Release } from '../lib/api'
 import { albumOf, releaseSongs } from '../lib/library'

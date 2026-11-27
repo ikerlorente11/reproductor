@@ -4,18 +4,18 @@
     <button class="rp-btn rp-small" title="Elegir varias canciones para borrarlas a la vez" @click="selecting = true">Seleccionar</button>
   </div>
   <ol :class="['rp-tracks', { 'rp-selecting': selecting }]">
-    <li v-for="(t, i) in hits" :key="t.id" :class="{ on: playingId === t.id && !selecting, off: t.have !== 'done', sel: picked.has(t.id) }"
+    <li v-for="(t, i) in hits" :key="t.id" :class="{ on: playingId === t.id && !selecting, off: t.have !== 'done' && !streams, sel: picked.has(t.id) }"
         @dblclick="!selecting && playHit(t)" @click="selecting && t.have === 'done' && pick(t, i, $event)">
       <span v-if="selecting" class="rp-tplay rp-tcheck">
         <input v-if="t.have === 'done'" type="checkbox" :checked="picked.has(t.id)" :aria-label="`Seleccionar «${t.title}»`" @click.stop="pick(t, i, $event)" />
         <span v-else class="rp-tnum">{{ i + 1 }}</span>
       </span>
-      <button v-else-if="t.have === 'done'" class="rp-tplay" :title="playingId === t.id && player.playing ? 'Pausar' : 'Reproducir'" @click="playHit(t)">
+      <button v-else-if="t.have === 'done' || streams" class="rp-tplay" :title="playingId === t.id && player.playing ? 'Pausar' : 'Reproducir'" @click="playHit(t)">
         <span class="rp-tnum">{{ i + 1 }}</span><span class="rp-ticon"><i :class="['rp-i', playingId === t.id && player.playing ? 'rp-i-pause' : 'rp-i-play']" aria-hidden="true"></i></span>
       </button>
       <span v-else class="rp-tplay rp-tnum">{{ i + 1 }}</span>
       <span class="rp-tinfo">
-        <span class="rp-ellipsis" @click="phone && !selecting && t.have === 'done' && playHit(t)">{{ t.title }}</span>
+        <span class="rp-ellipsis" @click="phone && !selecting && (t.have === 'done' || streams) && playHit(t)">{{ t.title }}</span>
         <small v-if="showArtist || showAlbum" class="rp-muted rp-ellipsis">
           <a v-if="showArtist && t.artist_id" href="#" @click.prevent="go({ v: 'artist', id: t.artist_id })">{{ t.artist_name }}</a>
           <template v-if="showArtist && showAlbum && t.album_title"> · </template>
@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import type { Release, TrackHit } from '../lib/api'
-import { downloadState, fmtDate, fmtTime, heldSongs } from '../lib/library'
+import { downloadState, fmtDate, fmtTime, heldSongs, playableSongs } from '../lib/library'
 import { nowPlaying, play, player } from '../lib/player'
 import { useStore } from '../lib/store'
 import AddToPlaylist from './AddToPlaylist.vue'
@@ -58,7 +58,7 @@ import SelectionBar from './SelectionBar.vue'
 /** Songs of the catalogue (an album, a Deezer playlist, search results), each with what I have of it. */
 const props = withDefaults(defineProps<{ hits: TrackHit[]; showArtist?: boolean; showAlbum?: boolean; showDate?: boolean }>(), { showArtist: false, showAlbum: false, showDate: false })
 const emit = defineEmits<{ changed: [] }>()
-const { api, state, go, notify, refreshFollows, refreshDownloads, remove, where, offline } = useStore()
+const { api, state, go, notify, refreshFollows, refreshDownloads, remove, where, offline, files } = useStore()
 const busy = reactive(new Set<number>())
 
 // ---- choosing several songs to delete them at once (shift-click takes the stretch in between) ----
@@ -100,7 +100,15 @@ const comingText = (t: TrackHit) => { const r = downloadOf(t); return (r && down
 const arriving = computed(() => props.hits.filter((t) => t.have === 'coming').map((t) => downloadOf(t)?.release_id ?? 'x').join())
 watch(arriving, (now, before) => { if (before && now !== before) emit('changed') })
 
-const songs = computed(() => heldSongs(props.hits))
+/** the app plays the songs one does not have too, from YouTube Music (Files.stream) */
+const streams = computed(() => !!files?.stream)
+// each in its place: the one one has, or (an app that can) the one to listen to
+const songs = computed(() => playableSongs(props.hits, streams.value))
+// the songs to listen to that the page shows are got ready beforehand (found, their first piece fetched): they sound at once
+watch(songs, (list) => {
+  const wanted = list.filter((s) => s.stream)
+  if (wanted.length) files?.prepare?.(wanted)
+}, { immediate: true })
 const playingId = computed(() => songs.value.find((s) => s.key === nowPlaying.value?.key)?.trackId ?? null)
 
 function playHit(t: TrackHit) {

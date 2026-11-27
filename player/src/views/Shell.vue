@@ -25,7 +25,7 @@
               <i class="rp-i rp-i-bell" aria-hidden="true"></i>{{ soundliftState.review + soundliftState.unplaced }}
             </span>
           </a>
-          <a href="#" :class="{ on: view.v === 'spotify' }" @click.prevent="go({ v: 'spotify' })"><span class="rp-ni"><i class="rp-i rp-i-up" aria-hidden="true"></i></span> Traer tu Spotify</a>
+          <a v-if="!pocket" href="#" :class="{ on: view.v === 'spotify' }" @click.prevent="go({ v: 'spotify' })"><span class="rp-ni"><i class="rp-i rp-i-up" aria-hidden="true"></i></span> Traer tu Spotify</a>
         </template>
       </nav>
       <div class="rp-lib">
@@ -35,17 +35,17 @@
                  @keydown.esc="filter = ''" />
           <button v-if="filter" class="rp-libfilter-clear" title="Quitar el filtro" aria-label="Quitar el filtro" @click="filter = ''"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
         </div>
-        <p v-if="filtering && !shownArtists.length && !shownSongs.length && !shownLists.length && !shownFolders.length" class="rp-muted rp-small rp-libnone">
+        <p v-if="filtering && !shownArtists.length && !shownSongs.length && !shownLists.length && !shownAlbums.length && !shownFolders.length" class="rp-muted rp-small rp-libnone">
           <template v-if="songsLoading"><span class="rp-spin"></span> Buscando…</template><template v-else>Nada con «{{ filter.trim() }}».</template></p>
         <div v-if="!filtering || shownArtists.length" class="rp-libh rp-libh-row">
           <button class="rp-group" :aria-expanded="isOpen('artists')" @click="toggleGroup('artists')">
-            <span class="rp-chev" :class="{ open: isOpen('artists') }"><i class="rp-i rp-i-chev" aria-hidden="true"></i></span> Artistas <small class="rp-muted">{{ filtering ? shownArtists.length : artists.length }}</small>
+            <span class="rp-chev" :class="{ open: isOpen('artists') }"><i class="rp-i rp-i-chev" aria-hidden="true"></i></span> Artistas <small class="rp-muted">{{ filtering ? shownArtists.length : allArtists.length }}</small>
           </button>
         </div>
         <template v-if="isOpen('artists') && (!filtering || shownArtists.length)">
         <p v-if="!loaded" class="rp-muted rp-small"><span class="rp-spin"></span> Cargando…</p>
-        <p v-else-if="!artists.length && !filtering" class="rp-muted rp-small">
-          <template v-if="server">Aún no tienes a nadie. <a href="#" @click.prevent="go({ v: 'search' })">Busca un artista</a>: síguelo, o baja solo un disco o una canción.</template>
+        <p v-else-if="!allArtists.length && !filtering" class="rp-muted rp-small">
+          <template v-if="server">Aún no tienes a nadie. <a href="#" @click.prevent="go({ v: 'search' })">Busca un artista</a> y síguelo: suena sin descargar nada.</template>
           <template v-else>Aún no hay música en tus carpetas.</template>
         </p>
         <ul v-else class="rp-artists">
@@ -77,6 +77,25 @@
           </ul>
           <p v-if="matchedSongs.length > shownSongs.length" class="rp-muted rp-small">Y {{ matchedSongs.length - shownSongs.length }} más: afina la búsqueda.</p>
         </template>
+        <template v-if="albums.length && (!filtering || shownAlbums.length)">
+          <div class="rp-libh rp-libh-row">
+            <button class="rp-group" :aria-expanded="isOpen('albums')" @click="toggleGroup('albums')">
+              <span class="rp-chev" :class="{ open: isOpen('albums') }"><i class="rp-i rp-i-chev" aria-hidden="true"></i></span> Discos <small class="rp-muted">{{ filtering ? shownAlbums.length : albums.length }}</small>
+            </button>
+          </div>
+          <ul v-if="isOpen('albums')" class="rp-artists">
+            <li v-for="a in shownAlbums" :key="a.key">
+              <a href="#" :class="{ on: isHere(a.view) }" @click.prevent="go(a.view)">
+                <img v-if="a.picture" :src="a.picture" alt="" class="rp-avatar rp-avatar-song" loading="lazy" />
+                <span v-else class="rp-avatar rp-avatar-song rp-avatar-none"><i class="rp-i rp-i-album" aria-hidden="true"></i></span>
+                <span class="rp-aname">
+                  <span class="rp-ellipsis">{{ a.name }}</span>
+                  <small v-if="a.note" class="rp-muted rp-ellipsis">{{ a.note }}</small>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </template>
         <div v-if="!filtering || shownLists.length" class="rp-libh rp-libh-row">
           <button class="rp-group" :aria-expanded="isOpen('lists')" @click="toggleGroup('lists')">
             <span class="rp-chev" :class="{ open: isOpen('lists') }"><i class="rp-i rp-i-chev" aria-hidden="true"></i></span> Listas <small class="rp-muted">{{ filtering ? shownLists.length : lists.length }}</small>
@@ -88,12 +107,13 @@
           <input ref="newListInput" v-model="newListName" class="rp-input" placeholder="Nombre de la lista" maxlength="120" @keydown.esc="creating = false" />
         </form>
         <p v-if="loaded && !lists.length && !creating && !filtering" class="rp-muted rp-small">
-          Aún no tienes listas. Crea una con ＋ y añade canciones<template v-if="server">, discos o artistas</template>.
+          Aún no tienes listas. Crea una con ＋ y añade canciones<template v-if="server && !pocket">, discos o artistas</template>.
         </p>
         <ul v-else class="rp-artists">
           <li v-for="p in shownLists" :key="p.key">
             <a href="#" :class="{ on: isHere(p.view) }" @click.prevent="go(p.view)">
-              <span class="rp-avatar rp-avatar-folder"><i class="rp-i rp-i-playlist" aria-hidden="true"></i></span>
+              <img v-if="p.picture" :src="p.picture" alt="" class="rp-avatar rp-avatar-song" loading="lazy" />
+              <span v-else class="rp-avatar rp-avatar-folder"><i class="rp-i rp-i-playlist" aria-hidden="true"></i></span>
               <span class="rp-aname">
                 <span class="rp-ellipsis">{{ p.name }}</span>
                 <small class="rp-muted rp-ellipsis">{{ p.note }}</small>
@@ -113,7 +133,7 @@
               <span class="rp-avatar rp-avatar-folder"><i :class="['rp-i', f.device ? 'rp-i-computer' : 'rp-i-folder']" aria-hidden="true"></i></span><span class="rp-ellipsis">{{ f.name }}</span>
             </a>
           </li>
-          <li v-if="!filtering && server">
+          <li v-if="!filtering && server && !pocket">
             <a href="#" :class="{ on: view.v === 'folder' && view.path === rootPath }" @click.prevent="go({ v: 'folder', path: rootPath })">
               <span class="rp-avatar rp-avatar-folder"><i class="rp-i rp-i-folder" aria-hidden="true"></i></span><span class="rp-ellipsis">Toda «{{ musicRoot }}»</span>
             </a>
@@ -135,7 +155,7 @@
         <button v-if="$slots.settings && view.v === 'home'" class="rp-iconbtn" aria-label="Ajustes" @click="go({ v: 'settings' })"><i class="rp-i rp-i-settings" aria-hidden="true"></i></button>
         <button v-if="back && view.v === 'home'" class="rp-iconbtn" :aria-label="back.label" :title="back.title || back.label" @click="back.go()"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
       </div>
-      <HandoffBanner v-if="server" />
+      <HandoffBanner v-if="server && !pocket" />
       <p v-if="state.error" class="rp-banner rp-banner-error">
         {{ state.error }} <button class="rp-btn rp-small" @click="connect()">Reintentar</button>
       </p>
@@ -144,7 +164,7 @@
       <QueuePanel v-else-if="panel === 'queue' && !phone" class="rp-panel-page" @close="panel = ''" />
       <DevicesPanel v-else-if="panel === 'devices' && !phone" class="rp-panel-page" @close="panel = ''" />
       <SongInfoPanel v-else-if="panel === 'info' && !phone" class="rp-panel-page" @close="panel = ''" @go="(v: View) => { panel = ''; go(v) }" />
-      <template v-else-if="view.v === 'home'"><HomeView v-if="server" /><DeviceHomeView v-else-if="device" /></template>
+      <template v-else-if="view.v === 'home'"><HomeView v-if="server && !pocket" /><DeviceHomeView v-else-if="device" /></template>
       <template v-else-if="view.v === 'search'">
         <template v-if="server"><SearchView :q="view.q || ''" :tab="view.tab" /><DeviceSearchView v-if="device && view.q" :q="view.q" embedded /></template>
         <DeviceSearchView v-else-if="device" :q="view.q || ''" />
@@ -155,8 +175,8 @@
       <template v-else-if="server && view.v === 'playlist'"><PlaylistView :key="`p${view.id}`" :id="view.id" /></template>
       <template v-else-if="server && view.v === 'dzlist'"><DeezerPlaylistView :key="`d${view.id}`" :id="view.id" /></template>
       <DownloadsView v-else-if="server && view.v === 'downloads'" />
-      <SoundliftView v-else-if="server && view.v === 'soundlift'" />
-      <SpotifyView v-else-if="server && view.v === 'spotify'" />
+      <SoundliftView v-else-if="server && !pocket && view.v === 'soundlift'" />
+      <SpotifyView v-else-if="server && !pocket && view.v === 'spotify'" />
       <template v-else-if="device && (view.v === 'songs' || view.v === 'albums' || view.v === 'artists')"><DeviceCollectionView :key="view.v" :kind="view.v" /></template>
       <template v-else-if="device && view.v === 'lalbum'"><DeviceAlbumView :key="view.key" :album-key="view.key" /></template>
       <template v-else-if="device && view.v === 'lartist'"><DeviceArtistView :key="view.name" :name="view.name" /></template>
@@ -165,7 +185,7 @@
       <template v-else-if="view.v === 'llist'"><MyListView :key="view.id" kind="list" :id="view.id" /></template>
       <DeviceDownloadView v-else-if="engine && view.v === 'get'" />
       <slot v-else-if="view.v === 'settings'" name="settings" />
-      <LibraryPage v-else-if="view.v === 'library'" :show="view.show" :artists="artists" :lists="lists" :folders="allFolders" :loaded="loaded"
+      <LibraryPage v-else-if="view.v === 'library'" :show="view.show" :artists="allArtists" :albums="albums" :lists="lists" :folders="allFolders" :loaded="loaded"
                    :pinned="pinned" :create="createNamed" />
       <p v-else class="rp-muted">{{ server ? 'Esta página es de la música de un equipo.' : 'Para esta página hace falta conectar un servidor de El Reproductor (en Ajustes).' }}</p>
     </main>
@@ -222,6 +242,7 @@ import { listKey } from '../lib/sources'
 import { control, startConnect, stopConnect, type Me } from '../lib/connect'
 import { startHandoff, stopHandoff } from '../lib/handoff'
 import { startPrefs, stopPrefs } from '../lib/prefs'
+import { savedAlbums, savedArtists, savedLists, startSaved, stopSaved } from '../lib/saved'
 import HandoffBanner from './HandoffBanner.vue'
 import { STORE, createState, queryFromView, type Files, type LibraryEntry, type MiniWindow, type RemoveRequest, type View } from '../lib/store'
 import '../lib/ui.css'
@@ -298,6 +319,8 @@ const props = defineProps<{
 }>()
 
 const server = !!props.api
+/** no server: the app answers the catalogue's pages itself (pocket.ts); the device's music is the library */
+const pocket = !!props.api?.pocket
 const api = props.api as Api
 const sl = props.sl || new Soundlift('', () => '')
 const files = props.files
@@ -365,17 +388,35 @@ async function refreshAlbums() {
 /** The sidebar's entries: each leads to a page (`view`). */
 type Entry = LibraryEntry
 const isHere = (v: View) => JSON.stringify(queryFromView(v)) === JSON.stringify(queryFromView(view.value))
-const loaded = computed(() => (server ? state.loaded : !!device?.state.loaded))
+const loaded = computed(() => (server && !pocket ? state.loaded : !!device?.state.loaded))
 /** With a server, the artists of the cloud (followed or with music there); else this device's. */
-const artists = computed<Entry[]>(() => (server
+const artists = computed<Entry[]>(() => (server && !pocket
   ? libraryArtists(state.follows, state.albums).map((a) => ({ key: `a${a.artist_id}`, name: a.name, note: a.note, picture: a.picture, view: { v: 'artist', id: a.artist_id } as View }))
   : device ? (device.state.tracks, device.artists).map((a) => ({ key: `l${a.name}`, name: a.name, picture: device.cover(a.cover),
       note: `${a.tracks.length} ${a.tracks.length === 1 ? 'canción' : 'canciones'}`, view: { v: 'lartist', name: a.name } as View })) : []))
-/** The server's playlists and the ones of this device. */
+/** and those followed (saved.ts) or downloaded without having anything of theirs yet: they lead to their page */
+const allArtists = computed<Entry[]>(() => (server ? withFollowed(artists.value) : artists.value))
+/** Those one has music of, and those one follows (saved.ts) without having anything of theirs, by name. */
+function withFollowed(own: Entry[]): Entry[] {
+  const there = new Set(own.map((e) => (e.view.v === 'artist' ? e.view.id : 0)))
+  // without a server, this device's artists are by name: one followed who is here already is not twice
+  const named = new Set(pocket ? own.map((e) => plain(e.name)) : [])
+  const downloading = pocket ? state.follows.map((f) => ({ id: f.artist_id, name: f.name, picture: f.picture, note: 'Descargando' })) : []
+  const followed = [...savedArtists.value.map((a) => ({ id: a.id, name: a.name, picture: a.picture, note: 'Siguiendo' })), ...downloading]
+    .filter((a) => !there.has(a.id) && !named.has(plain(a.name)) && !!there.add(a.id))
+    .map((a) => ({ key: `a${a.id}`, name: a.name, note: a.note, picture: a.picture, view: { v: 'artist', id: a.id } as View }))
+  return followed.length ? [...own, ...followed].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })) : own
+}
+/** The albums saved in the library (saved.ts), the latest first. */
+const albums = computed<Entry[]>(() => (server
+  ? savedAlbums.value.map((a) => ({ key: `b${a.id}`, name: a.name, note: a.note, picture: a.picture, view: { v: 'release', id: a.id } as View }))
+  : []))
+/** The server's playlists and the ones of this device; and the Deezer playlists saved. */
 const lists = computed<Entry[]>(() => [
   ...state.playlists.map((p) => ({ key: `p${p.id}`, name: p.name, note: `${p.items} ${p.items === 1 ? 'elemento' : 'elementos'}`, view: { v: 'playlist', id: p.id } as View })),
-  ...mine.lists.map((l) => ({ key: `l${l.id}`, name: l.name, note: `${l.songs.length} ${l.songs.length === 1 ? 'canción' : 'canciones'}${server ? ' · en este equipo' : ''}`,
-                              view: { v: 'llist', id: l.id } as View }))
+  ...mine.lists.map((l) => ({ key: `l${l.id}`, name: l.name, note: `${l.songs.length} ${l.songs.length === 1 ? 'canción' : 'canciones'}${server && !pocket ? ' · en este equipo' : ''}`,
+                              view: { v: 'llist', id: l.id } as View })),
+  ...(server ? savedLists.value.map((l) => ({ key: `d${l.id}`, name: l.name, note: l.note || 'Lista de Deezer', picture: l.picture, view: { v: 'dzlist', id: l.id } as View })) : [])
 ])
 async function refreshPlaylists() {
   if (!server) return
@@ -383,15 +424,16 @@ async function refreshPlaylists() {
 }
 /** The library's groups fold; all folded at first, and each stays as you leave it. */
 const GROUPS_KEY = 'reproductor.groups'
-const groups = reactive({ artists: false, lists: false, folders: false })
+const groups = reactive({ artists: false, albums: false, lists: false, folders: false })
 try { Object.assign(groups, JSON.parse(localStorage.getItem(GROUPS_KEY) || '{}')) } catch (_) {}
 // ---- the sidebar's filter: artists, playlists and folders by name; groups with matches open ----
 const filter = ref('')
 const plain = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 const filtering = computed(() => filter.value.trim().length > 0)
 const matches = (name: string) => plain(name).includes(plain(filter.value.trim()))
-const shownArtists = computed(() => (filtering.value ? artists.value.filter((a) => matches(a.name)) : artists.value))
+const shownArtists = computed(() => (filtering.value ? allArtists.value.filter((a) => matches(a.name)) : allArtists.value))
 const shownLists = computed(() => (filtering.value ? lists.value.filter((p) => matches(p.name)) : lists.value))
+const shownAlbums = computed(() => (filtering.value ? albums.value.filter((a) => matches(a.name)) : albums.value))
 const shownFolders = computed(() => (filtering.value ? allFolders.value.filter((f) => matches(f.name)) : allFolders.value))
 const isOpen = (key: keyof typeof groups) => filtering.value || groups[key]
 
@@ -400,7 +442,8 @@ const librarySongs = ref<Song[] | null>(null)
 const songsLoading = ref(false)
 async function loadSongs() {
   if (songsLoading.value) return
-  if (!server) { librarySongs.value = []; return }
+  // without a server what is downloaded is this device's music, already among its songs
+  if (!server || pocket) { librarySongs.value = []; return }
   songsLoading.value = true
   try {
     const done = await api.releases({ status: 'done' })
@@ -444,7 +487,7 @@ async function createPlaylist() {
 }
 /** A new list with this name (of the server when there is one, else of this device), opened. */
 async function createNamed(name: string) {
-  if (!server) {
+  if (!server || pocket) {
     const list = createList(name)
     newListName.value = ''
     creating.value = false
@@ -470,6 +513,7 @@ async function connect() {
       // what is listened to and where it was left, shared with the user's other devices; and the player's settings
       startHandoff(api, props.me)
       startPrefs(api)
+      startSaved(api)
     }
   } catch (err: any) {
     state.error = `No se pudo conectar El Reproductor con ${where}: ${err?.message || err}`
@@ -510,7 +554,7 @@ async function answerRemove(ok: boolean) {
     }
     r.done++
   }
-  await pruneFolders(gone)
+  if (!pocket) await pruneFolders(gone)
   try {
     if (gone.length) await api.forget(gone)
     if (r.unfollow && !failed) await api.unfollow(r.unfollow)
@@ -542,13 +586,13 @@ async function pruneFolders(paths: string[]) {
   }
 }
 
-const library = reactive({ artists, lists, folders: computed(() => allFolders.value), loaded })
-provide(STORE, { api, server, device, engine, offline, musicRoot, cloudName, where, files, openFetch: props.openFetch || null, mini: props.miniWindow || null, library, state, refreshFollows, refreshPlaylists, refreshDownloads, go, view, notify, sl, remove })
+const library = reactive({ artists: allArtists, albums, lists, folders: computed(() => allFolders.value), loaded })
+provide(STORE, { api, server, pocket, device, engine, offline, musicRoot, cloudName, where, files, openFetch: props.openFetch || null, mini: props.miniWindow || null, library, state, refreshFollows, refreshPlaylists, refreshDownloads, go, view, notify, sl, remove })
 
 // ---- folders of the music root (the music that is not by followed artist yet) ----
 const folders = ref<{ path: string; name: string }[]>([])
 async function loadFolders() {
-  if (!server) return
+  if (!server || pocket) return
   try {
     const found = await files.list(rootPath)
     folders.value = found.folders
@@ -585,15 +629,15 @@ function openTab(t: Tab) {
 }
 function goBack() { if (history.length > 1) history.back(); else go({ v: 'home' }) }
 const pinned = computed(() => [
-  ...(server && (soundliftState.url || soundliftState.unplaced) ? [{ key: 'soundlift', name: 'Descargar música', note: 'Pega enlaces o busca canciones sueltas', icon: 'rp-i-music', view: { v: 'soundlift' } as View }] : []),
-  ...(server ? [{ key: 'spotify', name: 'Traer tu Spotify', note: 'Tus listas y lo que sigues', icon: 'rp-i-up', view: { v: 'spotify' } as View }] : [])
+  ...(server && !pocket && (soundliftState.url || soundliftState.unplaced) ? [{ key: 'soundlift', name: 'Descargar música', note: 'Pega enlaces o busca canciones sueltas', icon: 'rp-i-music', view: { v: 'soundlift' } as View }] : []),
+  ...(server && !pocket ? [{ key: 'spotify', name: 'Traer tu Spotify', note: 'Tus listas y lo que sigues', icon: 'rp-i-up', view: { v: 'spotify' } as View }] : [])
 ])
 
 // ---- player: cloud path → playable URL ----
 setResolver((song) => files.play(song))
 // the radio, when the queue ends: songs like the last ones, of the library (and of the artists Deezer relates, if the
 // app can ask it)
-setRadio((seeds, exclude) => radioSongs(seeds, exclude, { api: server ? api : undefined, device, artists: () => library.artists, fetcher: props.openFetch || null }))
+setRadio((seeds, exclude) => radioSongs(seeds, exclude, { api: server && !pocket ? api : undefined, device, artists: () => library.artists, fetcher: props.openFetch || null }))
 // what is played from a list's page counts for that list («Lo que más escuchas» on Inicio)
 setSourceOf(() => {
   const v = view.value
@@ -662,6 +706,7 @@ onBeforeUnmount(() => {
   stopConnect()
   stopHandoff()
   stopPrefs()
+  stopSaved()
   clearInterval(keepTimer)
   clearTimeout(poll)
   window.removeEventListener('keydown', onKey)

@@ -65,6 +65,8 @@ import { useStore, type LibraryEntry, type View } from '../lib/store'
 const props = defineProps<{
   show?: string
   artists: LibraryEntry[]
+  /** the albums saved in the library */
+  albums: LibraryEntry[]
   lists: LibraryEntry[]
   folders: LibraryEntry[]
   loaded: boolean
@@ -74,11 +76,12 @@ const props = defineProps<{
   create: (name: string) => Promise<void> | void
 }>()
 const { go } = useStore()
-type Kind = 'list' | 'artist' | 'folder'
-const kindName: Record<Kind, string> = { list: 'Lista', artist: 'Artista', folder: 'Carpeta' }
+type Kind = 'list' | 'artist' | 'album' | 'folder'
+const kindName: Record<Kind, string> = { list: 'Lista', artist: 'Artista', album: 'Disco', folder: 'Carpeta' }
 const kinds = computed(() => [
   { key: 'lists', label: 'Listas', n: props.lists.length },
   { key: 'artists', label: 'Artistas', n: props.artists.length },
+  { key: 'albums', label: 'Discos', n: props.albums.length },
   { key: 'folders', label: 'Carpetas', n: props.folders.length }
 ].filter((k) => k.n > 0 || k.key === 'lists'))
 
@@ -97,6 +100,7 @@ const groups = computed(() => {
   const all: { kind: Kind; show: string; label: string; entries: LibraryEntry[] }[] = [
     { kind: 'list', show: 'lists', label: 'Listas', entries: props.lists },
     { kind: 'artist', show: 'artists', label: 'Artistas', entries: props.artists },
+    { kind: 'album', show: 'albums', label: 'Discos', entries: props.albums },
     { kind: 'folder', show: 'folders', label: 'Carpetas', entries: props.folders }
   ]
   return all.filter((g) => !props.show || props.show === g.show)

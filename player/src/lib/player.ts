@@ -394,7 +394,8 @@ function el(): AudioOutput {
     resumed(key, seconds, at) { resumed(key, seconds, at) },
     error(message) {
       const song = state.queue[state.index]
-      state.error = song ? `No se pudo reproducir «${song.title}»: ${message}` : message
+      state.error = !song ? message : song.stream ? `No se pudo escuchar «${song.title}» desde YouTube Music: ${message}`
+        : `No se pudo reproducir «${song.title}»: ${message}`
     }
   })
   return audio
@@ -860,9 +861,13 @@ async function playAt(i: number): Promise<boolean> {
     // a browser tab never touched may not make sound by itself (autoplay): say what to do
     const status = err?.statusCode ?? err?.status ?? err?.response?.status
     const why = err?.name === 'NotAllowedError' ? 'el navegador no deja sonar una pestaña que no has tocado: pulsa ▶ en ella'
+      : song.stream ? 'YouTube Music no la da ahora mismo (o no la encuentra)'
       : status === 404 || /not found/i.test(String(err?.message)) ? 'la canción ya no está en tu nube'
       : err?.message || String(err)
     if (mine === seq) state.error = `No se pudo reproducir «${song.title}»: ${why}`
+    // a song to listen to that YouTube does not give: on with the next one, as the native player does (not when the
+    // browser is what does not let it sound: the next one would not either)
+    if (song.stream && err?.name !== 'NotAllowedError') setTimeout(() => { if (mine === seq) next() }, 1500)
     return false
   } finally {
     if (mine === seq) state.loading = false

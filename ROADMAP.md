@@ -73,3 +73,19 @@ En orden: cada bloque se apoya en los anteriores; dentro de cada uno, de lo más
   Archivador): igualar el volumen, quitar los silencios, el ecualizador general, la radio, la calidad con wifi y la
   velocidad son los mismos en la web, el escritorio y el móvil; gana el último cambio. Son de cada dispositivo: la
   salida y el ecualizador de cada salida, el volumen extra, la calidad con datos móviles, la ventana y el tema.
+- [x] **Escuchar sin descargar, desde YouTube Music** (escritorio y Android, sin servidor): cualquier canción, disco,
+  lista o artista del catálogo suena al momento, con ▶ y aleatorio en cada página. Se busca por su ISRC (o artista,
+  título y duración) en YouTube Music y su audio se pide como el cliente de visionOS de yt-dlp; las canciones que se ven
+  se preparan antes (`Files.prepare`). Escritorio: `src-tauri/src/yt.rs`; Android: `Yt.kt`.
+- [x] **Seguir no es descargar**: «Seguir» (artistas) y «Guardar» (discos, listas de Deezer) solo lo ponen en tu
+  biblioteca, en el dispositivo y, con servidor, igual en todos (`saved.ts`, `GET`/`PUT /api/saved`). «Descargar» (la
+  nube) es aparte: baja la música del artista y lo nuevo que saque.
+- [x] **Android sin servidor** («de bolsillo», `pocket.ts`): la app responde ella misma a las páginas del catálogo
+  (busca en Deezer, artista, disco, listas) y descarga al teléfono: cada canción de YouTube Music en AAC, etiquetada y
+  con su portada, en `Música/El Reproductor/<artista>/<disco>/` (`Dl.kt`); los artistas que descargas se mantienen al
+  día con las mismas reglas que el servidor (`discography.ts`). Borrar manda a la papelera de Android.
+
+## Pendiente
+
+- [ ] **La web, sin descargar**: escuchar desde YouTube Music en la web a través del servidor (la web no puede pedir
+  a YouTube por sí misma).
