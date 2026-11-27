@@ -73,6 +73,14 @@
     <template #about>
       <section class="ra-box">
         <p class="rp-muted rp-small">Versión {{ version || '—' }}.</p>
+        <h3 class="ra-news-h">Novedades de la 0.3.0</h3>
+        <ul class="ra-news">
+          <li>Sonido: todas las canciones igual de fuertes y sin silencios al principio y al final; ecualizador de 10 bandas con preajustes, uno para cada salida (altavoz, cascos, cada aparato Bluetooth); volumen extra (Ajustes › Sonido y Ecualizador).</li>
+          <li>Temporizador para dormir (también al acabar la canción, con un fundido) y velocidad, en el botón de la luna del reproductor; funcionan con la pantalla apagada. Las canciones largas siguen donde las dejaste.</li>
+          <li>Radio al acabar la cola: sigue con canciones parecidas que tienes. Calidad de Navidrome y Jellyfin, con otra para datos móviles (Ajustes › Reproducción).</li>
+          <li>Con tu servidor, los ajustes de sonido, ecualizador, radio y calidad son los mismos en todos tus dispositivos.</li>
+          <li>Ajustes en apartados, y botones de listas, artistas y discos más claros (lo menos usado, en «···»).</li>
+        </ul>
         <h3 class="ra-news-h">Novedades de la 0.2.1</h3>
         <ul class="ra-news">
           <li>El widget, estrecho (dos celdas de ancho): la canción arriba y los botones debajo, grandes, en vez de apretados al lado.</li>
