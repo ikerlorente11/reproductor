@@ -1,8 +1,8 @@
 <template>
-  <ReproductorShell :key="mode" :api="server?.api" :sl="server?.sl" :files="files" :device="device" :engine="null"
+  <ReproductorShell :key="mode" :api="server?.api || pocket || undefined" :sl="server?.sl" :files="files" :device="device" :engine="null"
                     :offline="server ? offline : null" :view="view" :navigate="navigate" music-root="Música"
                     :cloud-name="server ? server.connection.name || 'tu nube' : 'Android'" :me="server ? me : undefined"
-                    :where="server ? 'tu nube' : undefined" :open-fetch="hostFetch">
+                    :where="server ? 'tu nube' : pocket ? 'este teléfono' : undefined" :open-fetch="hostFetch">
     <template #settings>
       <SettingsView :device="device" :libraries="remotes" :version="version" :server="server?.connection || null" :server-error="serverError"
                     :saved="savedServer" :connect="connectServer" :disconnect="disconnectServer" :allowed="allowed" />
@@ -13,11 +13,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue'
 import {
-  DeviceLibrary, Offline, RemoteLibraries, ReproductorShell, withRemotes, deviceId, play, queryFromView, setOutput, viewFromQuery,
-  type Files, type Me, type View
+  DeviceLibrary, Offline, RemoteLibraries, ReproductorShell, withRemotes, deviceId, play, pocketApi, queryFromView, setOutput, viewFromQuery,
+  type Api, type Files, type Me, type PocketSong, type View
 } from 'reproductor-player'
 import 'reproductor-player/ui.css'
-import { androidDevice, androidOffline, cloud, hostFetch, info, nativeOutput, openUri, secrets, tellApp } from './lib/host'
+import { androidDevice, androidOffline, cloud, host, hostFetch, hostUrl, info, nativeOutput, openUri, secrets, tellApp } from './lib/host'
 import { connect, disconnect, savedConnection, type Connection, type Server } from './lib/server'
 import SettingsView from './SettingsView.vue'
 
@@ -47,7 +47,10 @@ const allowed = ref(true)
 const server = shallowRef<Server | null>(null)
 const serverError = ref('')
 const savedServer = ref<Connection | null>(null)
-const mode = computed(() => (server.value ? 'server' : 'device'))
+/** without a server: the catalogue's pages answered in the app itself (pocket.ts), when the installed app can play
+ *  from YouTube Music (and download to the phone, if it knows how) */
+const pocket = shallowRef<Api | null>(null)
+const mode = computed(() => (server.value ? 'server' : pocket.value ? 'pocket' : 'device'))
 /** This phone among the person's devices (once connected to a server): «Android · Pixel 8». */
 const me = reactive<Me>({ id: deviceId(), name: 'Android', kind: 'android' })
 async function connectServer(c: Connection, password: string) {
@@ -67,13 +70,30 @@ const files: Files = {
     try { return await cloud.list(dir) } catch (err) { throw failed(err) }
   },
   async remove(path) {
+    // a song downloaded without a server: out of the phone's music
+    if (path.startsWith('pocket:')) return void await host('/host/dl/remove', { method: 'POST', body: JSON.stringify({ paths: [path] }) })
     try { await cloud.remove(path) } catch (err) { throw failed(err) }
   },
   async play(song) {
     if (song.device) return { url: device.backend.fileUrl(song.device) }
+    if (song.path.startsWith('pocket:')) return { url: hostUrl(`/p/${song.path.slice('pocket:'.length)}`) }
+    // a song one does not have: the app's host finds it on YouTube Music and relays its audio (Yt.kt)
+    if (song.stream) {
+      const q = new URLSearchParams({ artist: song.stream.artist, title: song.stream.title, d: String(Math.round(song.stream.duration || 0)),
+                                      ...(song.stream.isrc ? { isrc: song.stream.isrc } : {}) })
+      return { url: hostUrl(`/host/yt/q?${q}`) }
+    }
     return { url: cloud.url(song.path) }
+  },
+  // only if the installed app knows how (one older than this page does not)
+  get stream() { return canStream.value },
+  prepare(songs) {
+    const wanted = songs.filter((s) => s.stream).map((s) => ({ artist: s.stream!.artist, title: s.stream!.title, d: s.stream!.duration || 0, isrc: s.stream!.isrc || '' }))
+    if (wanted.length && canStream.value) host('/host/yt/prepare', { method: 'POST', body: JSON.stringify({ songs: wanted }) }).catch(() => {})
   }
 }
+/** the app's host can play songs from YouTube Music (it says so in /host/info) */
+const canStream = ref(false)
 
 const readHash = (): View => viewFromQuery(Object.fromEntries(new URLSearchParams(location.hash.replace(/^#/, ''))))
 const view = ref<View>(readHash())
@@ -115,13 +135,21 @@ onMounted(async () => {
   if (about) {
     version.value = about.version
     allowed.value = about.library
+    canStream.value = !!about.features?.includes('yt')
+    if (canStream.value) {
+      const downloads = about.features?.includes('dl') ? {
+        download: (song: PocketSong) => host<{ path: string }>('/host/dl/song', { method: 'POST', body: JSON.stringify(song) }),
+        remove: async (paths: string[]) => { await host('/host/dl/remove', { method: 'POST', body: JSON.stringify({ paths }) }) }
+      } : null
+      pocket.value = pocketApi(hostFetch, downloads)
+    }
     if (about.device) me.name = `Android · ${about.device}`
   }
   await device.start().catch((err) => { device.state.error = String(err?.message || err) })
   remotes.start()
   tellApp({ type: 'ready' })
-  // the server saved, if any
-  const saved = await savedConnection().catch(() => null)
+  // the server saved, if any (while developing, `?pocket` tries the app without it, leaving it saved)
+  const saved = import.meta.env.DEV && new URLSearchParams(location.search).has('pocket') ? null : await savedConnection().catch(() => null)
   if (saved) {
     try { server.value = await connect(saved, undefined, me.name) } catch (err: any) {
       serverError.value = `No se pudo conectar con ${saved.url}: ${err?.message || err}`

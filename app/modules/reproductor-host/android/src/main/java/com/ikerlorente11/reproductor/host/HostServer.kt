@@ -53,6 +53,10 @@ class HostServer(private val context: Context, port: Int) : NanoHTTPD("127.0.0.1
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
+    /** songs one does not have, straight from YouTube Music (Yt.kt) */
+    private val yt = Yt(client)
+    /** downloading to this phone without a server (Dl.kt) */
+    private val dl = Dl(context, client, yt)
     /** the installed app's version (app.json's), which Settings shows */
     private val appVersion: String by lazy {
         try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Exception) { null } ?: VERSION
@@ -99,9 +103,14 @@ class HostServer(private val context: Context, port: Int) : NanoHTTPD("127.0.0.1
                 path == "/host/prefs" -> prefsRoute(session)
                 path == "/host/secret" -> secretRoute(session)
                 path == "/host/audio" -> json(Response.Status.OK, playback.command(body(session)))
+                path == "/host/yt/prepare" -> { yt.prepare(body(session).optJSONArray("songs") ?: JSONArray()); empty() }
+                path == "/host/yt/q" -> ytSong(session)
+                path == "/host/dl/song" -> json(Response.Status.OK, dl.song(body(session)))
+                path == "/host/dl/remove" -> { dl.remove(body(session).optJSONArray("paths") ?: JSONArray()); empty() }
                 path.startsWith("/host/library") -> libraryRoute(session, path.removePrefix("/host/library").trimStart('/'))
                 path.startsWith("/host/cloud") -> cloudRoute(session, path.removePrefix("/host/cloud").trimStart('/'))
                 path.startsWith("/host/offline") -> offlineRoute(session, path.removePrefix("/host/offline").trimStart('/'))
+                path.startsWith("/p/") -> dl.file(path.removePrefix("/p/"))?.let { (stream, mime, size) -> ranged(session, stream, mime, size) } ?: notFound(path)
                 path.startsWith("/f/") -> library.file(path.removePrefix("/f/"))?.let { (stream, mime, size) -> ranged(session, stream, mime, size) } ?: notFound(path)
                 path.startsWith("/c/") -> library.cover(path.removePrefix("/c/"))?.let { f -> binary(FileInputStream(f), "image/jpeg", f.length(), cache = true) } ?: notFound(path)
                 path.startsWith("/l/") -> library.lyrics(path.removePrefix("/l/"))?.let { newFixedLengthResponse(Response.Status.OK, "text/plain; charset=utf-8", it) } ?: notFound(path)
@@ -109,6 +118,8 @@ class HostServer(private val context: Context, port: Int) : NanoHTTPD("127.0.0.1
                 else -> notFound(path)
             }
         } catch (e: Cloud.NotFound) {
+            notFound(path)
+        } catch (e: Yt.NotFound) {
             notFound(path)
         } catch (e: IllegalArgumentException) {
             json(Response.Status.BAD_REQUEST, JSONObject().put("detail", e.message ?: e.toString()))
@@ -139,6 +150,8 @@ class HostServer(private val context: Context, port: Int) : NanoHTTPD("127.0.0.1
         .put("device", deviceName())
         .put("library", library.allowed())
         .put("music", settings.musicDir().absolutePath)
+        // what this app's host knows how to do (a page newer than the app asks before using it)
+        .put("features", JSONArray().put("yt").put("dl"))
 
     /** What the person calls this device (Ajustes de Android › Acerca del teléfono), else its model. */
     private fun deviceName(): String {
@@ -203,6 +216,20 @@ class HostServer(private val context: Context, port: Int) : NanoHTTPD("127.0.0.1
         response.addHeader("Accept-Ranges", "bytes")
         response.addHeader("Cache-Control", "no-store")
         upstream.header("Content-Range")?.let { response.addHeader("Content-Range", it) }
+        return response
+    }
+
+    /** `/host/yt/q?artist=…&title=…&d=…`: a song one does not have, the piece of its audio the player asks for (Yt.kt). */
+    private fun ytSong(session: IHTTPSession): Response {
+        val p = session.parameters
+        val piece = yt.piece(p["artist"]?.firstOrNull() ?: "", p["title"]?.firstOrNull() ?: "", p["d"]?.firstOrNull()?.toDoubleOrNull()?.toLong() ?: 0,
+                             p["isrc"]?.firstOrNull() ?: "", session.headers["range"])
+        val response = if (piece.length >= 0) newFixedLengthResponse(status(piece.status), piece.mime, piece.stream, piece.length)
+            else newChunkedResponse(status(piece.status), piece.mime, piece.stream)
+        response.setGzipEncoding(false)
+        response.addHeader("Accept-Ranges", "bytes")
+        response.addHeader("Cache-Control", "no-store")
+        piece.contentRange?.let { response.addHeader("Content-Range", it) }
         return response
     }
 

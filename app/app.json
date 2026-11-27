@@ -2,7 +2,7 @@
   "expo": {
     "name": "El Reproductor",
     "slug": "reproductor",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "default",
     "scheme": "reproductor",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
     ],
     "android": {
       "package": "com.ikerlorente11.reproductor",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1fb866"

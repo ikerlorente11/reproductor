@@ -73,6 +73,13 @@
     <template #about>
       <section class="ra-box">
         <p class="rp-muted rp-small">Versión {{ version || '—' }}.</p>
+        <h3 class="ra-news-h">Novedades de la 0.4.0</h3>
+        <ul class="ra-news">
+          <li>Escucha sin descargar: cualquier canción, disco, lista o artista suena al momento desde YouTube Music, con ▶ y aleatorio en cada página, también con la pantalla apagada.</li>
+          <li>Sin servidor: busca en todo el catálogo, abre cualquier artista, disco o lista de Deezer y descárgalo al teléfono, con sus etiquetas y su portada (en Música › El Reproductor). Los artistas que descargas se mantienen al día solos.</li>
+          <li>«Seguir» y «Guardar» ponen artistas, discos y listas en tu biblioteca sin descargar nada; «Descargar» (la nube) es aparte. Con tu servidor, tu biblioteca es la misma en todos tus dispositivos.</li>
+          <li>Aleatorio junto a ▶.</li>
+        </ul>
         <h3 class="ra-news-h">Novedades de la 0.3.0</h3>
         <ul class="ra-news">
           <li>Sonido: todas las canciones igual de fuertes y sin silencios al principio y al final; ecualizador de 10 bandas con preajustes, uno para cada salida (altavoz, cascos, cada aparato Bluetooth); volumen extra (Ajustes › Sonido y Ecualizador).</li>

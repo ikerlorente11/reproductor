@@ -16,6 +16,8 @@ export const HOST_BASE: string = remembered(BASE_KEY, 'host').replace(/\/+$/, ''
 
 export interface HostInfo {
   version: string
+  /** what the app's host knows how to do (`yt`: songs one does not have, from YouTube Music) */
+  features?: string[]
   /** what the person calls this phone (or its model) */
   device: string
   /** the permission to read the music was given */
