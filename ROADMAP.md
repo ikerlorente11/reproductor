@@ -85,7 +85,6 @@ En orden: cada bloque se apoya en los anteriores; dentro de cada uno, de lo más
   con su portada, en `Música/El Reproductor/<artista>/<disco>/` (`Dl.kt`); los artistas que descargas se mantienen al
   día con las mismas reglas que el servidor (`discography.ts`). Borrar manda a la papelera de Android.
 
-## Pendiente
-
-- [ ] **La web, sin descargar**: escuchar desde YouTube Music en la web a través del servidor (la web no puede pedir
-  a YouTube por sí misma).
+- [x] **La web, sin descargar**: escucha desde YouTube Music a través del servidor (la web no puede pedir a YouTube
+  por sí misma): `yt.py` del servicio busca y retransmite por trozos; `POST /api/yt` da a cada canción una dirección
+  firmada (12 h) que el `<audio>` reproduce sin sesión, y prepara antes las de cada página.
