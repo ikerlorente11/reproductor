@@ -1214,3 +1214,5 @@ a.rp-info-artist:hover { background: var(--rp-surface-2); }
 /* a setting with several choices (PlaybackSettings): its name and what it does, the choices under it */
 .rp-quality { display: grid; gap: 8px; }
 .rp-q-kbps { margin-left: 5px; }
+/* a part's box (Ajustes in the web, which has no app of its own to style it) */
+.rp-settings-box { display: grid; gap: 12px; padding: 18px; border-radius: 14px; background: var(--rp-surface-2); }
