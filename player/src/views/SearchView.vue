@@ -47,7 +47,7 @@
         </a>
         <span v-if="a.status && a.status !== 'skipped'" :class="['rp-badge', `rp-badge-${a.status}`]">{{ statusLabel({ status: a.status, reason: '' }).text }}</span>
         <button v-else class="rp-btn rp-small" :disabled="downloading === a.id" title="Bajar este disco (sin seguir al artista)" @click="downloadAlbum(a)">
-          <span v-if="downloading === a.id" class="rp-spin"></span> <i class="rp-i rp-i-download" aria-hidden="true"></i> Bajar
+          <span v-if="downloading === a.id" class="rp-spin"></span> <i class="rp-i rp-i-cloud-down" aria-hidden="true"></i> Bajar
         </button>
         <AddToPlaylist kind="release" :id="a.id" small />
       </li>

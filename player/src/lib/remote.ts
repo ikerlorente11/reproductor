@@ -5,6 +5,7 @@
  * as tracks shaped like the device's, their ids marked with the library's (`r:<library>:<id>`).
  */
 import type { Fetch } from './api.ts'
+import { maxKbps } from './quality.ts'
 import type { DeviceTrack } from './device.ts'
 import { md5 } from './md5.ts'
 
@@ -106,7 +107,8 @@ export class SubsonicSource implements RemoteSource {
     }
   }
 
-  streamUrl(id: string): string { return this.url('stream', { id }) }
+  // recoded to the quality chosen (quality.ts), if not the original
+  streamUrl(id: string): string { const k = maxKbps(); return this.url('stream', k ? { id, maxBitRate: k } : { id }) }
   coverUrl(cover: string): string { return this.url('getCoverArt', { id: cover, size: 400 }) }
 }
 
@@ -184,7 +186,9 @@ export class JellyfinSource implements RemoteSource {
 
   streamUrl(id: string): string {
     return `${this.config.url}/Audio/${encodeURIComponent(id)}/universal?${new URLSearchParams({ UserId: this.userId, api_key: this.token,
-      DeviceId: `elreproductor-${this.config.id}`, Container: 'opus,ogg,mp3,flac,m4a,aac,wav,webm', TranscodingContainer: 'mp3', AudioCodec: 'mp3' })}`
+      DeviceId: `elreproductor-${this.config.id}`, Container: 'opus,ogg,mp3,flac,m4a,aac,wav,webm', TranscodingContainer: 'mp3', AudioCodec: 'mp3',
+      // recoded to the quality chosen (quality.ts), if not the original
+      ...(maxKbps() ? { MaxStreamingBitrate: String(maxKbps() * 1000) } : {}) })}`
   }
   coverUrl(cover: string): string {
     return `${this.config.url}/Items/${encodeURIComponent(cover)}/Images/Primary?${new URLSearchParams({ maxHeight: '400', api_key: this.token })}`

@@ -26,7 +26,7 @@
         <span v-if="t.have === 'coming'" class="rp-badge rp-badge-wanted rp-badge-progress" :title="comingText(t)">
           <i v-if="comingPct(t) !== null" :style="{ width: comingPct(t) + '%' }"></i><span>{{ comingText(t) }}</span></span>
         <button v-else-if="!t.have" class="rp-mini" title="Bajar esta canción" :disabled="busy.has(t.id)" @click="download(t)">
-          <span v-if="busy.has(t.id)" class="rp-spin"></span><template v-else><i class="rp-i rp-i-download" aria-hidden="true"></i></template>
+          <span v-if="busy.has(t.id)" class="rp-spin"></span><template v-else><i class="rp-i rp-i-cloud-down" aria-hidden="true"></i></template>
         </button>
         <AddToPlaylist kind="song" :id="t.id" small class="rp-hover" @added="!t.have && emit('changed')" />
         <button v-if="t.have === 'done' && t.file" class="rp-mini rp-hover rp-mini-danger" :title="`Borrar esta canción de ${where}`" aria-label="Borrar esta canción" @click="removeSong(t)">

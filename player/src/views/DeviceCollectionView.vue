@@ -9,7 +9,7 @@
       </select>
       <template v-if="kind === 'songs'">
         <button class="rp-btn rp-primary rp-round-btn" :disabled="!songs.length" title="Reproducir" @click="play(songs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-        <button class="rp-btn" :disabled="!songs.length" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
+        <button class="rp-act" :disabled="!songs.length" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
       </template>
     </header>
 

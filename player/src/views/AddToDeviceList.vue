@@ -1,7 +1,8 @@
 <template>
   <span ref="root" class="rp-add">
-    <button :class="small ? 'rp-mini rp-add-mini' : 'rp-btn'" :title="title" :aria-label="title" :aria-expanded="open" @click.stop="toggle">
-      <template v-if="small"><i class="rp-i rp-i-add" aria-hidden="true"></i></template><template v-else><i class="rp-i rp-i-add" aria-hidden="true"></i> Añadir a lista</template>
+    <!-- in a row, a small round one; in a page's header, one of its round buttons (the icon alone, its name on hover) -->
+    <button :class="small ? 'rp-mini rp-add-mini' : 'rp-act'" :title="title" :aria-label="title" :aria-expanded="open" @click.stop="toggle">
+      <i :class="['rp-i', small ? 'rp-i-add' : 'rp-i-add-list']" aria-hidden="true"></i>
     </button>
     <!-- a phone: the menu is a sheet from the bottom; touching outside it closes it -->
     <div v-if="open" class="rp-menu-backdrop" @click.stop="close()"></div>

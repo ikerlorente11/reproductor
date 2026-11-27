@@ -1,5 +1,5 @@
 /** What every page of the app shares: the API, the followed artists and how to move around. */
-import { inject, reactive, type InjectionKey } from 'vue'
+import { inject, reactive, type InjectionKey, type Ref } from 'vue'
 import type { Api, Downloads, Follow, PlaylistSummary, Release } from './api.ts'
 import type { DeviceLibrary } from './device.ts'
 import type { LocalEngine } from './engine.ts'
@@ -15,8 +15,15 @@ export interface LibraryEntry { key: string; name: string; note?: string; pictur
 
 /** The desktop's mini player (MiniPlayer): its window made a card, always on top and anywhere on the screen, and back;
  *  `compact`: the card shrunk to a bar (as the phone's widget), kept for the next times. Only an app that can do it with
- *  its window gives it. */
-export interface MiniWindow { enter(): void; exit(): void; readonly compact: boolean; setCompact(on: boolean): void }
+ *  its window gives it. `minimize` and `close`: the window's own buttons, which the card (without frame) shows itself. */
+export interface MiniWindow {
+  enter(): void
+  exit(): void
+  readonly compact: boolean
+  setCompact(on: boolean): void
+  minimize?(): void
+  close?(): void
+}
 
 /** Something the audio element can play, and how to give it back when the song changes. */
 export interface Playable { url: string; release?: () => void }
@@ -69,6 +76,8 @@ export interface Store {
   refreshDownloads: () => Promise<void>
   /** moves to a page; `replace`: without a new entry in the history (to keep a search's words, say) */
   go: (view: View, replace?: boolean) => void
+  /** the page on screen */
+  view: Readonly<Ref<View>>
   notify: (text: string, error?: boolean) => void
   sl: Soundlift
   /** Deletes songs from the cloud (to its trash bin) after asking; true when something was deleted. */

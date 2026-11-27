@@ -15,10 +15,12 @@
           </span>
           <div class="rp-hero-actions">
             <button class="rp-btn rp-primary rp-round-btn" title="Reproducir" @click="play(songs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-            <button class="rp-btn" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
-            <button class="rp-btn" title="Que suene después de la canción actual" @click="playNext(songs); notify('Sonará a continuación.')">Siguiente en la cola</button>
+            <button class="rp-act" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
             <AddToDeviceList :songs="songs" />
-            <button v-if="device!.backend.reveal" class="rp-btn" title="Abrir su carpeta" @click="device!.backend.reveal!(album.tracks[0].path)"><i class="rp-i rp-i-folder-open" aria-hidden="true"></i> Carpeta</button>
+            <ActionMenu :items="[
+              { label: 'Siguiente en la cola', note: 'Que suene después de la canción actual', icon: 'rp-i-queue', run: () => { playNext(songs); notify('Sonará a continuación.') } },
+              { label: 'Abrir su carpeta', icon: 'rp-i-folder-open', if: !!device!.backend.reveal, run: () => device!.backend.reveal!(album!.tracks[0].path) }
+            ]" />
           </div>
         </div>
       </header>
@@ -31,6 +33,7 @@
 import { computed } from 'vue'
 import { play, playNext } from '../lib/player'
 import { useStore } from '../lib/store'
+import ActionMenu from './ActionMenu.vue'
 import AddToDeviceList from './AddToDeviceList.vue'
 import SongList from './SongList.vue'
 

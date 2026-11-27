@@ -1,6 +1,6 @@
 <template>
   <!-- shrunk: a bar as the phone's widget (the song on the left, its buttons on the right, the progress at the bottom) -->
-  <div v-if="compact" class="rp-mpc" :style="{ '--rp-tint': tint || undefined }" data-tauri-drag-region @wheel.passive="wheel">
+  <div v-if="compact" class="rp-mpc" :style="{ '--rp-tint': tint || undefined }" data-tauri-drag-region @wheel.passive="wheel" @mousedown="noFocus">
     <img v-if="shown.cover" :src="shown.cover" alt="" class="rp-mpc-bg" data-tauri-drag-region />
     <span class="rp-mpc-scrim" data-tauri-drag-region></span>
     <div class="rp-mpc-row" data-tauri-drag-region>
@@ -24,16 +24,18 @@
         <button :class="['rp-mp-btn', { on: volumeOpen }]" :title="volumeOpen ? 'Ver la canción' : 'Volumen (también con la rueda del ratón)'" :aria-pressed="volumeOpen"
                 @click="volumeOpen = !volumeOpen"><i :class="['rp-i', view.volume ? 'rp-i-volume' : 'rp-i-volume-mute']" aria-hidden="true"></i></button>
       </span>
-      <span class="rp-mpc-side">
+      <span :class="['rp-mpc-side', { two: mini?.minimize || mini?.close }]">
         <button class="rp-mp-btn rp-mpc-small" title="Agrandar: la tarjeta con la portada" @click="setCompact(false)"><i class="rp-i rp-i-up" aria-hidden="true"></i></button>
+        <button v-if="mini?.minimize" class="rp-mp-btn rp-mpc-small" title="Minimizar" @click="mini.minimize()"><i class="rp-i rp-i-minimize" aria-hidden="true"></i></button>
         <button class="rp-mp-btn rp-mpc-small" title="Volver a la app completa" @click="mini?.exit()"><i class="rp-i rp-i-expand" aria-hidden="true"></i></button>
+        <button v-if="mini?.close" class="rp-mp-btn rp-mpc-small rp-mp-close" title="Cerrar" @click="mini.close()"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
       </span>
     </div>
     <div class="rp-mp-bar rp-mpc-bar" role="slider" tabindex="0" aria-label="Posición" :aria-valuemin="0" :aria-valuemax="Math.round(view.duration)"
          :aria-valuenow="Math.round(view.time)" @click="seek"><i :style="{ width: fraction * 100 + '%' }"></i></div>
   </div>
 
-  <div v-else class="rp-mp" :style="{ '--rp-tint': tint || undefined }">
+  <div v-else class="rp-mp" :style="{ '--rp-tint': tint || undefined }" @mousedown="noFocus">
     <!-- a card like a trading card: dragged by its top strip (the desktop's window has no frame) -->
     <div class="rp-mp-top" data-tauri-drag-region>
       <span class="rp-mp-from rp-ellipsis" data-tauri-drag-region>{{ far ? `En ${controlled?.name}` : open ? tabLabel : lyrics ? 'Letra' : 'El Reproductor' }}</span>
@@ -44,7 +46,11 @@
       <button :class="['rp-mp-btn', { on: open }]" :title="open ? 'Ver la portada' : 'Cola, listas, artistas e información'" :aria-expanded="open" @click="togglePanel">
         <i class="rp-i rp-i-playlist" aria-hidden="true"></i>
       </button>
-      <button class="rp-mp-btn" title="Volver a la app completa" @click="mini?.exit()"><i class="rp-i rp-i-expand" aria-hidden="true"></i></button>
+      <span class="rp-mp-window">
+        <button class="rp-mp-btn rp-mpc-small" title="Volver a la app completa" @click="mini?.exit()"><i class="rp-i rp-i-expand" aria-hidden="true"></i></button>
+        <button v-if="mini?.minimize" class="rp-mp-btn rp-mpc-small" title="Minimizar" @click="mini.minimize()"><i class="rp-i rp-i-minimize" aria-hidden="true"></i></button>
+        <button v-if="mini?.close" class="rp-mp-btn rp-mpc-small rp-mp-close" title="Cerrar" @click="mini.close()"><i class="rp-i rp-i-close" aria-hidden="true"></i></button>
+      </span>
     </div>
 
     <!-- the cover, or in its place what to jump to (as the phone's player does with its panels) -->
@@ -158,6 +164,8 @@ function wheel(e: WheelEvent) { if (e.deltaY) setVolume(view.value.volume + (e.d
 function toggleMute() {
   if (view.value.volume > 0) { unmuted = view.value.volume; setVolume(0) } else setVolume(unmuted || 0.5)
 }
+/** a button clicked keeps no focus: space then plays and pauses (Shell's keys), instead of pressing that button again */
+function noFocus(e: MouseEvent) { if ((e.target as HTMLElement).closest('button')) e.preventDefault() }
 const tint = ref('')
 watch(() => shown.value.cover, async (cover) => { tint.value = (await coverColor(cover)) || '' }, { immediate: true })
 

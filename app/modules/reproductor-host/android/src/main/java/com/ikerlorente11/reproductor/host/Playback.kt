@@ -3,6 +3,11 @@ package com.ikerlorente11.reproductor.host
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
+import android.media.audiofx.Equalizer
+import android.media.audiofx.LoudnessEnhancer
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -45,6 +50,7 @@ class Playback(private val context: Context, private val events: Events, private
         override fun run() {
             val p = player ?: return
             if (p.isPlaying) {
+                if (pastSound(p)) return
                 send("time", JSONObject().put("t", p.currentPosition / 1000.0))
                 if (++ticks % KEEP_EVERY == 0) keep()
                 if (ticks % WIDGET_EVERY == 0) PlayerWidget.progress(context)
@@ -68,6 +74,144 @@ class Playback(private val context: Context, private val events: Events, private
     /** The widget shows what changed. */
     private fun shown() = main.post { PlayerWidget.refresh(context) }
 
+    // ---- the volume the page chose, the speed, and the sleep timer (done here: the page sleeps with the screen off) ----
+    private var volume = 1f
+    private var speed = 1f
+    /** the sleep timer's fading out (1: not fading) */
+    private var fade = 1f
+
+    // ---- each song's sound (the page measures it: analysis.ts): its gain and where its sound starts and ends ----
+    private class Sound(val gain: Double, val startMs: Long, val endMs: Long)
+    private val sounds = HashMap<String, Sound>()
+    /** raises a song (the volume can only lower it), on the player's audio session */
+    private var enhancer: LoudnessEnhancer? = null
+    private fun soundOf(key: String?) = key?.let { sounds[it] }
+
+    /** The player's volume: the page's, the song's gain (if it lowers it) and the timer's fading; a gain that raises it,
+     *  on the enhancer. */
+    private fun applyVolume() {
+        val p = player ?: return
+        val gain = soundOf(p.currentMediaItem?.mediaId)?.gain ?: 0.0
+        p.volume = (volume * Math.pow(10.0, minOf(0.0, gain) / 20).toFloat() * fade).coerceIn(0f, 1f)
+        val e = enhancer ?: return
+        val raise = maxOf(0.0, gain) + boost
+        try {
+            e.setTargetGain((raise * 100).toInt())
+            e.enabled = raise > 0
+        } catch (_: Exception) {}
+    }
+
+    // ---- the equaliser (the system's, on the player's session: its own bands) and the extra volume ----
+    private var equalizer: Equalizer? = null
+    /** the page's ten bands (dB, at BANDS); null: off */
+    private var eqBands: DoubleArray? = null
+    /** raised beyond the maximum (dB), on the enhancer */
+    private var boost = 0.0
+
+    /** Each of the system's bands takes what the page's say at its own frequency (between two of them, in proportion,
+     *  on a log scale), within what the system allows. */
+    private fun applyEq() {
+        val e = equalizer ?: return
+        val bands = eqBands
+        try {
+            if (bands == null) { e.enabled = false; return }
+            val (low, high) = e.bandLevelRange.let { it[0].toInt() to it[1].toInt() }
+            for (b in 0 until e.numberOfBands.toInt()) {
+                val hz = e.getCenterFreq(b.toShort()) / 1000.0
+                e.setBandLevel(b.toShort(), (at(bands, hz) * 100).toInt().coerceIn(low, high).toShort())
+            }
+            e.enabled = true
+        } catch (_: Exception) {}
+    }
+    private fun at(bands: DoubleArray, hz: Double): Double {
+        val x = Math.log(hz)
+        if (x <= Math.log(BANDS[0])) return bands[0]
+        for (i in 1 until BANDS.size) {
+            val a = Math.log(BANDS[i - 1])
+            val b = Math.log(BANDS[i])
+            if (x <= b) return bands[i - 1] + (bands[i] - bands[i - 1]) * (x - a) / (b - a)
+        }
+        return bands.last()
+    }
+
+    // ---- where it sounds (the phone's speaker, wired headphones, a Bluetooth device): the page keeps a setting for each ----
+    private val audioManager by lazy { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
+    private var output: Pair<String, String> = "" to ""
+    private fun currentOutput(): Pair<String, String> {
+        val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        val bt = setOf(AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, 26 /* BLE_HEADSET */, 27 /* BLE_SPEAKER */)
+        val wired = setOf(AudioDeviceInfo.TYPE_WIRED_HEADPHONES, AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_USB_HEADSET)
+        devices.firstOrNull { it.type in bt }?.let { val name = it.productName?.toString()?.takeIf { n -> n.isNotBlank() } ?: "Bluetooth"; return "bt:$name" to name }
+        devices.firstOrNull { it.type in wired }?.let { return "wired" to "Auriculares con cable" }
+        return "speaker" to "Altavoz del móvil"
+    }
+    private fun outputChanged() {
+        val now = currentOutput()
+        if (now == output) return
+        output = now
+        send("output", JSONObject().put("key", now.first).put("name", now.second))
+    }
+    private val devicesCallback = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(added: Array<out AudioDeviceInfo>?) { outputChanged() }
+        override fun onAudioDevicesRemoved(removed: Array<out AudioDeviceInfo>?) { outputChanged() }
+    }
+    init {
+        main.post {
+            try { audioManager.registerAudioDeviceCallback(devicesCallback, main); output = currentOutput() } catch (_: Exception) {}
+        }
+    }
+
+    /** The song's sound ended (its silence after it skipped): the next one, or the end (the page says what comes next). */
+    private fun pastSound(p: ExoPlayer): Boolean {
+        val end = soundOf(p.currentMediaItem?.mediaId)?.endMs ?: 0
+        if (end <= 0 || p.currentPosition < end) return false
+        when {
+            sleepEndOfSong -> { p.pause(); endSleep(); send("slept", JSONObject()) }
+            p.hasNextMediaItem() -> p.seekToNextMediaItem()
+            else -> { p.pause(); send("ended", JSONObject()) }
+        }
+        return true
+    }
+    /** it stops at this time (ms since 1970; 0: no), or at the end of the song playing */
+    private var sleepAt = 0L
+    private var sleepEndOfSong = false
+    private var sleepFadeMs = 10_000L
+    private val sleeping get() = sleepAt > 0 || sleepEndOfSong
+    private val sleeper = object : Runnable {
+        override fun run() {
+            sleepTick()
+            if (sleeping) main.postDelayed(this, SLEEP_TICK_MS)
+        }
+    }
+
+    /** Fades out the last seconds; at its time, pauses (at the end of the song the player pauses itself: `pauseAtEnd…`). */
+    private fun sleepTick() {
+        val p = player ?: return
+        val left = when {
+            sleepAt > 0 -> sleepAt - System.currentTimeMillis()
+            sleepEndOfSong && p.duration != C.TIME_UNSET ->
+                (((soundOf(p.currentMediaItem?.mediaId)?.endMs?.takeIf { it > 0 } ?: p.duration) - p.currentPosition) / p.playbackParameters.speed).toLong()
+            else -> return
+        }
+        if (sleepAt > 0 && left <= 0) {
+            p.pause()
+            endSleep()
+            send("slept", JSONObject())
+            return
+        }
+        fade = if (p.isPlaying && left < sleepFadeMs) (left.toFloat() / sleepFadeMs).coerceIn(0f, 1f) else 1f
+        applyVolume()
+    }
+
+    private fun endSleep() {
+        main.removeCallbacks(sleeper)
+        sleepAt = 0
+        sleepEndOfSong = false
+        fade = 1f
+        player?.pauseAtEndOfMediaItems = false
+        applyVolume()
+    }
+
     private val listener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             val p = player ?: return
@@ -82,6 +226,11 @@ class Playback(private val context: Context, private val events: Events, private
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             val p = player ?: return
+            // the sleep timer at the end of the song: it paused there (▶ goes on with the next one)
+            if (!playWhenReady && reason == Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM && sleepEndOfSong) {
+                endSleep()
+                send("slept", JSONObject())
+            }
             if (!playWhenReady) { send("pause", JSONObject().put("t", p.currentPosition / 1000.0)); keep() }
             shown()
         }
@@ -90,6 +239,9 @@ class Playback(private val context: Context, private val events: Events, private
             val key = mediaItem?.mediaId ?: return
             if (key == lastKey && reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) return
             lastKey = key
+            applyVolume()
+            val start = soundOf(key)?.startMs ?: 0
+            if (start > 0 && (player?.currentPosition ?: 0) < start) player?.seekTo(start)
             keep(0)
             shown()
             send("moved", JSONObject().put("key", key))
@@ -136,7 +288,21 @@ class Playback(private val context: Context, private val events: Events, private
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
-            .also { player = it; it.addListener(listener) }
+            .also {
+                player = it
+                it.addListener(listener)
+                it.setPlaybackSpeed(speed)
+                try {
+                    val session = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager).generateAudioSessionId()
+                    it.audioSessionId = session
+                    enhancer?.release()
+                    enhancer = LoudnessEnhancer(session)
+                    equalizer?.release()
+                    equalizer = try { Equalizer(0, session) } catch (_: Exception) { null }
+                    applyEq()
+                } catch (_: Exception) { enhancer = null }
+                applyVolume()
+            }
         if (controller?.isConnected != true) {
             controller?.release()
             // connecting a controller starts the media service, which makes itself a foreground service while it plays
@@ -157,10 +323,15 @@ class Playback(private val context: Context, private val events: Events, private
         else meta.setArtworkData(artwork(context).fallbackPng, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
         val duration = o.optDouble("duration", 0.0)
         if (duration > 0) meta.setDurationMs((duration * 1000).toLong())
+        sounds[o.optString("key")] = Sound(o.optDouble("gain", 0.0), (o.optDouble("start", 0.0) * 1000).toLong(), (o.optDouble("end", 0.0) * 1000).toLong())
         return MediaItem.Builder().setMediaId(o.optString("key")).setUri(o.optString("url")).setMediaMetadata(meta.build()).build()
     }
 
-    private fun items(list: JSONArray?): List<MediaItem> = (0 until (list?.length() ?: 0)).map { itemOf(list!!.getJSONObject(it)) }
+    /** A window's songs (the sounds kept are the window's: those of songs that left it go) */
+    private fun items(list: JSONArray?): List<MediaItem> {
+        sounds.clear()
+        return (0 until (list?.length() ?: 0)).map { itemOf(list!!.getJSONObject(it)) }
+    }
 
     /** A command of the page: `{ op, … }`; answers the player's state. */
     fun command(body: JSONObject): JSONObject = onMain {
@@ -190,13 +361,35 @@ class Playback(private val context: Context, private val events: Events, private
                     if (index > 0) p.addMediaItems(0, list.subList(0, index))
                     if (index + 1 < list.size) p.addMediaItems(list.subList(index + 1, list.size))
                     keepWindow(body.optJSONArray("items"))
+                    applyVolume()
+                    val start = soundOf(current.mediaId)?.startMs ?: 0
+                    if (start > 0 && p.currentPosition < minOf(start, 3000)) p.seekTo(start)
                 }
             }
             "play" -> player?.let { if (it.playbackState == Player.STATE_IDLE) it.prepare(); if (it.playbackState == Player.STATE_ENDED) it.seekTo(0); it.play() }
             "pause" -> player?.pause()
             "seek" -> player?.let { val ms = (body.optDouble("t", 0.0) * 1000).toLong(); it.seekTo(ms); keep(ms); shown() }
-            "volume" -> player?.volume = body.optDouble("v", 1.0).toFloat().coerceIn(0f, 1f)
-            "clear" -> player?.let { it.stop(); it.clearMediaItems(); lastKey = null; shown() }
+            "volume" -> { volume = body.optDouble("v", 1.0).toFloat().coerceIn(0f, 1f); applyVolume(); if (sleeping) sleepTick() }
+            "eq" -> {
+                val list = body.optJSONArray("bands")
+                eqBands = list?.let { l -> DoubleArray(l.length()) { l.optDouble(it, 0.0) } }
+                applyEq()
+            }
+            "boost" -> { boost = body.optDouble("db", 0.0).coerceIn(0.0, 12.0); applyVolume() }
+            "rate" -> { speed = body.optDouble("r", 1.0).toFloat().coerceIn(0.25f, 3f); player?.setPlaybackSpeed(speed) }
+            "sleep" -> {
+                endSleep()
+                val at = body.optLong("at", 0)
+                val endOfSong = body.optBoolean("endOfSong", false)
+                if (at > 0 || endOfSong) {
+                    sleepAt = at
+                    sleepEndOfSong = endOfSong
+                    sleepFadeMs = (body.optDouble("fade", 10.0) * 1000).toLong()
+                    player?.pauseAtEndOfMediaItems = endOfSong
+                    main.post(sleeper)
+                }
+            }
+            "clear" -> player?.let { endSleep(); it.stop(); it.clearMediaItems(); lastKey = null; shown() }
             "state" -> {}
             else -> throw IllegalArgumentException("¿Qué hago con el reproductor?")
         }
@@ -258,8 +451,14 @@ class Playback(private val context: Context, private val events: Events, private
         val saved = kept.getString("key", null)?.let {
             JSONObject().put("key", it).put("t", kept.getLong("ms", 0) / 1000.0).put("at", kept.getLong("at", 0))
         } ?: JSONObject.NULL
-        val p = player ?: return JSONObject().put("loaded", false).put("saved", saved)
+        // what this side knows how to do (an older app, whose page came newer in an update, does not)
+        val features = JSONArray().put("sleep").put("rate").put("eq").put("boost").put("output")
+        val out = JSONObject().put("key", output.first).put("name", output.second)
+        val p = player ?: return JSONObject().put("loaded", false).put("saved", saved).put("features", features).put("sleeping", sleeping).put("output", out)
         return JSONObject()
+            .put("features", features)
+            .put("output", out)
+            .put("sleeping", sleeping)
             .put("saved", saved)
             .put("loaded", p.mediaItemCount > 0)
             .put("key", p.currentMediaItem?.mediaId ?: JSONObject.NULL)
@@ -276,6 +475,10 @@ class Playback(private val context: Context, private val events: Events, private
 
     companion object {
         private const val TICK_MS = 500L
+        /** the page's equaliser bands (Hz): eq.ts's BANDS */
+        private val BANDS = doubleArrayOf(32.0, 64.0, 125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0, 16000.0)
+        /** how often the sleep timer looks at the time left (and fades out) */
+        private const val SLEEP_TICK_MS = 250L
         /** where it is is kept every this many ticks while it plays (5 s) */
         private const val KEEP_EVERY = 10
         /** the widget's progress bar moves every this many ticks (1 s) */

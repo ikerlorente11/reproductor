@@ -11,11 +11,9 @@
           <span class="rp-muted rp-small">{{ songs.length }} {{ songs.length === 1 ? 'canción' : 'canciones' }}</span>
           <div class="rp-hero-actions">
             <button class="rp-btn rp-primary rp-round-btn" :disabled="!songs.length" title="Reproducir" @click="play(songs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-            <button class="rp-btn" :disabled="!songs.length" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
-            <template v-if="kind === 'list'">
-              <button class="rp-btn" @click="startRename">Cambiar nombre</button>
-              <button class="rp-btn rp-danger" @click="remove"><i class="rp-i rp-i-delete" aria-hidden="true"></i> Borrar la lista</button>
-            </template>
+            <button class="rp-act" :disabled="!songs.length" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
+            <ActionMenu v-if="kind === 'list'" :items="[{ label: 'Cambiar nombre', icon: 'rp-i-edit', run: startRename }, 'sep',
+                                                     { label: 'Borrar la lista', icon: 'rp-i-delete', danger: true, run: remove }]" />
           </div>
         </div>
       </header>
@@ -33,6 +31,7 @@ import type { Song } from '../lib/library'
 import { deleteList, listById, mine, recentSongs, removeFromList, renameList, toggleLike } from '../lib/mine'
 import { play } from '../lib/player'
 import { useStore } from '../lib/store'
+import ActionMenu from './ActionMenu.vue'
 import SongList from './SongList.vue'
 
 /** Your songs: the ones you like, the ones you listened to lately, or one of your playlists. */

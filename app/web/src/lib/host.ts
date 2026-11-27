@@ -1,6 +1,6 @@
 /** The page's side of the host (modules/reproductor-host, HostServer.kt): the local server the app serves this page
  * from. Everything goes over HTTP on 127.0.0.1 with the token the app put in the URL (`?t=`), kept for the session. */
-import type { AudioOutput, DeviceBackend, DeviceTrack, Listing, OfflineBackend, OutputEvents, OutputItem } from 'reproductor-player'
+import type { AudioOutput, DeviceBackend, DeviceTrack, Listing, OfflineBackend, OutputEvents, OutputItem, SleepTimer } from 'reproductor-player'
 
 const TOKEN_KEY = 'reproductor.host.token'
 const BASE_KEY = 'reproductor.host.base'
@@ -171,15 +171,31 @@ export function nativeOutput(): AudioOutput {
   let time = 0
   let loaded = false
   let on: OutputEvents | null = null
+  /** what the app's player knows how to do (an older app, with a newer page from an update, says nothing) */
+  let features: string[] = []
+  /** the speed, the equaliser and the extra volume asked (sent once the app's player says it can) */
+  let rate = 1
+  let eqBands: number[] | null = null
+  let boost = 0
   const cmd = (body: Record<string, unknown>) =>
     post<{ loaded: boolean; key?: string | null; t?: number; d?: number; playing?: boolean; ended?: boolean
-           saved?: { key: string; t: number; at: number } | null }>('/host/audio', body)
+           saved?: { key: string; t: number; at: number } | null; features?: string[]; sleeping?: boolean
+           output?: { key: string; name: string } }>('/host/audio', body)
   const absolute = (it: OutputItem): OutputItem => ({ ...it, url: it.url ? current(it.url) : '', cover: it.cover ? current(it.cover) : null })
   /** What the player did while this page slept (or before it was loaded again): its song, its second, whether it plays. */
   async function resync() {
     if (!on) return
     try {
       const s = await cmd({ op: 'state' })
+      const could = new Set(features)
+      features = s.features || []
+      const now = (f: string) => !could.has(f) && features.includes(f)
+      if (now('rate') && rate !== 1) cmd({ op: 'rate', r: rate }).catch(() => {})
+      if (now('eq') && eqBands) cmd({ op: 'eq', bands: eqBands }).catch(() => {})
+      if (now('boost') && boost) cmd({ op: 'boost', db: boost }).catch(() => {})
+      if (s.output?.key) on.output?.(s.output.key, s.output.name)
+      // the sleep timer went off while this page slept
+      if (s.sleeping === false) on.slept?.()
       // the app was closed: where the player was kept (it went on while this page slept)
       if (!s.loaded) { if (s.saved) on.resumed?.(s.saved.key, s.saved.t, s.saved.at); return }
       loaded = true
@@ -209,6 +225,8 @@ export function nativeOutput(): AudioOutput {
       case 'pause': if (typeof e.t === 'number') time = e.t; if (!paused) { paused = true; on.pause() } break
       case 'ended': paused = true; on.ended(); break
       case 'moved': loaded = true; on.moved?.(e.key); break
+      case 'slept': on.slept?.(); break
+      case 'output': on.output?.(e.key, e.name); break
       case 'error': on.error?.(e.message); break
     }
   }, resync)
@@ -225,6 +243,13 @@ export function nativeOutput(): AudioOutput {
     pause() { cmd({ op: 'pause' }).catch(() => {}) },
     seek(t) { time = t; cmd({ op: 'seek', t }).catch(() => {}) },
     setVolume(v) { cmd({ op: 'volume', v }).catch(() => {}) },
+    setRate(r) { rate = r; if (features.includes('rate')) cmd({ op: 'rate', r }).catch(() => {}) },
+    setEq(bands) { eqBands = bands; if (features.includes('eq')) cmd({ op: 'eq', bands }).catch(() => {}) },
+    setBoost(db) { boost = db; if (features.includes('boost')) cmd({ op: 'boost', db }).catch(() => {}) },
+    // the timer goes in the app's player, which plays on while this page sleeps (without it, the page's own timer)
+    get sleep() {
+      return features.includes('sleep') ? (timer: SleepTimer | null) => { cmd({ op: 'sleep', ...(timer || {}) }).catch(() => {}) } : undefined
+    },
     clear() { loaded = false; paused = true; cmd({ op: 'clear' }).catch(() => {}) },
     get paused() { return paused },
     get currentTime() { return time },

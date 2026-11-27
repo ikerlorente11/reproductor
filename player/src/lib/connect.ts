@@ -266,6 +266,19 @@ export const control = {
     if (!connect.controlling) return setVolume(v)
     clearTimeout(volumeTimer)   // a slider moved sends one order when it rests, not one per step
     volumeTimer = setTimeout(() => send(connect.controlling, 'volume', { value: v }).catch(() => {}), 250)
+  },
+  /** `seconds` forward (back, if negative) of the song */
+  seekBy(seconds: number) {
+    const r = connect.controlling ? remote.value : null
+    const time = r ? r.time : player.time
+    const duration = r ? r.duration || r.song?.duration || 0 : player.duration
+    if (duration) control.seek(Math.max(0, Math.min(duration - 0.5, time + seconds)) / duration)
+  },
+  /** the volume up (down, if negative) by `delta` (0…1) */
+  volumeBy(delta: number) {
+    const r = connect.controlling ? remote.value : null
+    const now = r ? r.volume ?? 1 : player.volume
+    control.volume(Math.round(Math.max(0, Math.min(1, now + delta)) * 100) / 100)
   }
 }
 let volumeTimer: any = null

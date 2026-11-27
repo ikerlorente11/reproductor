@@ -23,10 +23,9 @@
           </span>
           <div class="rp-hero-actions">
             <button v-if="songs.length" class="rp-btn rp-primary rp-round-btn" title="Reproducir" @click="play(songs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-            <button v-if="songs.length" class="rp-btn" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
+            <button v-if="songs.length" class="rp-act" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
             <OfflineButton :paths="songs.map((s) => s.path)" :list-id="pl.id" />
-            <button class="rp-btn rp-small" @click="startRename">Cambiar nombre</button>
-            <button class="rp-btn rp-small rp-danger" @click="askDelete = true">Borrar lista</button>
+            <ActionMenu :items="menu" />
           </div>
         </div>
       </header>
@@ -96,7 +95,7 @@
             </span>
           </li>
           <li v-for="p in pendingSongs" :key="'p' + p.entry.id" class="off rp-pending-song">
-            <span class="rp-tplay rp-tnum"><span v-if="p.dl?.status === 'downloading'" class="rp-spin"></span><i v-else class="rp-i rp-i-download" aria-hidden="true"></i></span>
+            <span class="rp-tplay rp-tnum"><span v-if="p.dl?.status === 'downloading'" class="rp-spin"></span><i v-else class="rp-i rp-i-cloud-down" aria-hidden="true"></i></span>
             <span class="rp-tinfo">
               <span class="rp-ellipsis">{{ p.entry.title }}</span>
               <small class="rp-muted rp-ellipsis">{{ p.entry.subtitle }}</small>
@@ -130,7 +129,8 @@
 </template>
 
 <script setup lang="ts">
-import OfflineButton from './OfflineButton.vue'
+import ActionMenu, { type MenuAction } from './ActionMenu.vue'
+import OfflineButton, { keepList } from './OfflineButton.vue'
 import { isPhone as phone, toggleRow } from '../lib/phone'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { Playlist, PlaylistEntry, PlaylistSong, Release } from '../lib/api'
@@ -140,7 +140,7 @@ import { useStore } from '../lib/store'
 
 const KIND = { song: 'Canción', release: 'Disco', artist: 'Artista', file: 'Archivo' }
 const props = defineProps<{ id: number }>()
-const { api, state, go, notify, refreshPlaylists, where } = useStore()
+const { api, state, go, notify, refreshPlaylists, where, offline } = useStore()
 const pl = ref<Playlist | null>(null)
 const error = ref('')
 const renaming = ref(false)
@@ -149,6 +149,17 @@ const nameInput = ref<HTMLInputElement>()
 const askDelete = ref(false)
 
 const songs = computed(() => playlistSongs(pl.value?.songs || []))
+/** the header's «⋯»: keep it on the device, rename it, delete it */
+const menu = computed<(MenuAction | 'sep')[]>(() => {
+  const id = pl.value?.id || 0
+  return [
+    { label: 'Mantener guardada', note: 'Lo que se añada se guarda solo en este equipo', icon: 'rp-i-save', if: !!offline && songs.value.length > 0,
+      checked: !!offline?.isKept(id), run: () => keepList(offline!, id, songs.value.map((s) => s.path), !offline!.isKept(id), notify) },
+    { label: 'Cambiar nombre', icon: 'rp-i-edit', run: startRename },
+    'sep',
+    { label: 'Borrar lista', icon: 'rp-i-delete', danger: true, run: () => { askDelete.value = true } }
+  ]
+})
 const total = computed(() => (pl.value?.songs || []).reduce((n, s) => n + (s.duration || 0), 0))
 const files = computed(() => pl.value?.file_entries || 0)
 const covers = computed(() => [...new Set((pl.value?.entries || []).map((e) => e.cover).filter(Boolean) as string[])])

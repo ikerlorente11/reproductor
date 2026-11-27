@@ -496,6 +496,11 @@ export class Api {
   sessions() {
     return this.call<{ device: string; name: string; kind: string; updated: number; session: any }[]>('/api/sessions')
   }
+  // ---- the player's settings, the same on every device of the user (prefs.ts) ----
+  prefs() { return this.call<{ prefs: Record<string, any>; updated: number }>('/api/prefs') }
+  putPrefs(prefs: object, updated: number) {
+    return this.call<{ kept: boolean; prefs: Record<string, any>; updated: number }>('/api/prefs', { method: 'PUT', body: JSON.stringify({ prefs, updated }) })
+  }
 
   /** Deezer's 30-second sample of a song. */
   async preview(trackId: number): Promise<Blob> {

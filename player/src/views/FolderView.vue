@@ -11,7 +11,7 @@
       <span class="rp-grow"></span>
       <input v-model="filter" class="rp-search rp-search-small" type="search" placeholder="Filtrar" />
       <button class="rp-btn rp-primary rp-round-btn" :disabled="!shown.length" title="Reproducir" @click="play(shown, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-      <button class="rp-btn" :disabled="!shown.length" @click="play(shown, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
+      <button class="rp-act" :disabled="!shown.length" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(shown, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
     </header>
 
     <p v-if="error" class="rp-banner rp-banner-error">{{ error }}</p>

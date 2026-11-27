@@ -216,10 +216,12 @@ import type { Offline } from '../lib/offline'
 import { createList, mine } from '../lib/mine'
 import { Soundlift, soundliftState } from '../lib/soundlift'
 import { isAudioName, isBusy, libraryArtists, releaseSongs, type Song } from '../lib/library'
-import { nowPlaying, play, setResolver, setSourceOf } from '../lib/player'
+import { nowPlaying, play, setRadio, setResolver, setSourceOf } from '../lib/player'
+import { radioSongs } from '../lib/radio'
 import { listKey } from '../lib/sources'
 import { control, startConnect, stopConnect, type Me } from '../lib/connect'
 import { startHandoff, stopHandoff } from '../lib/handoff'
+import { startPrefs, stopPrefs } from '../lib/prefs'
 import HandoffBanner from './HandoffBanner.vue'
 import { STORE, createState, queryFromView, type Files, type LibraryEntry, type MiniWindow, type RemoveRequest, type View } from '../lib/store'
 import '../lib/ui.css'
@@ -465,8 +467,9 @@ async function connect() {
     state.connected = true
     if (props.me) {
       startConnect(api, props.me, notify, !!props.oneTab)
-      // what is listened to and where it was left, shared with the user's other devices
+      // what is listened to and where it was left, shared with the user's other devices; and the player's settings
       startHandoff(api, props.me)
+      startPrefs(api)
     }
   } catch (err: any) {
     state.error = `No se pudo conectar El Reproductor con ${where}: ${err?.message || err}`
@@ -540,7 +543,7 @@ async function pruneFolders(paths: string[]) {
 }
 
 const library = reactive({ artists, lists, folders: computed(() => allFolders.value), loaded })
-provide(STORE, { api, server, device, engine, offline, musicRoot, cloudName, where, files, openFetch: props.openFetch || null, mini: props.miniWindow || null, library, state, refreshFollows, refreshPlaylists, refreshDownloads, go, notify, sl, remove })
+provide(STORE, { api, server, device, engine, offline, musicRoot, cloudName, where, files, openFetch: props.openFetch || null, mini: props.miniWindow || null, library, state, refreshFollows, refreshPlaylists, refreshDownloads, go, view, notify, sl, remove })
 
 // ---- folders of the music root (the music that is not by followed artist yet) ----
 const folders = ref<{ path: string; name: string }[]>([])
@@ -588,6 +591,9 @@ const pinned = computed(() => [
 
 // ---- player: cloud path → playable URL ----
 setResolver((song) => files.play(song))
+// the radio, when the queue ends: songs like the last ones, of the library (and of the artists Deezer relates, if the
+// app can ask it)
+setRadio((seeds, exclude) => radioSongs(seeds, exclude, { api: server ? api : undefined, device, artists: () => library.artists, fetcher: props.openFetch || null }))
 // what is played from a list's page counts for that list («Lo que más escuchas» on Inicio)
 setSourceOf(() => {
   const v = view.value
@@ -611,10 +617,32 @@ function schedule() {
   }, busy ? 4000 : 30000)
 }
 
+/**
+ * The keyboard: space plays and pauses; Ctrl+←/→ the previous and next song, Ctrl+↑/↓ the volume, Shift+←/→ 5 s back and
+ * forward. The mini player, which has nothing to scroll, also takes the arrows alone (←/→ the second, ↑/↓ the volume).
+ * Not while writing (a search, a name); on a slider, its arrows are its own.
+ */
 function onKey(e: KeyboardEvent) {
   const target = e.target as HTMLElement
-  if (target && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)) return
-  if (e.code === 'Space') { e.preventDefault(); control.toggle() }
+  if (e.altKey || e.metaKey || e.defaultPrevented) return
+  if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)) return
+  const arrows = (props.mini && !e.ctrlKey && !e.shiftKey) ? 'plain' : e.ctrlKey && !e.shiftKey ? 'ctrl' : e.shiftKey && !e.ctrlKey ? 'shift' : ''
+  const act = (fn: () => void) => { e.preventDefault(); fn() }
+  switch (e.code) {
+    case 'Space':
+      // a button with the focus (reached with Tab) is pressed with space, as always
+      if (target?.tagName !== 'BUTTON' && !e.ctrlKey && !e.shiftKey) act(control.toggle)
+      break
+    case 'ArrowLeft': case 'ArrowRight': {
+      const forward = e.code === 'ArrowRight'
+      if (arrows === 'ctrl') act(forward ? control.next : control.prev)
+      else if (arrows === 'shift' || arrows === 'plain') act(() => control.seekBy(forward ? 5 : -5))
+      break
+    }
+    case 'ArrowUp': case 'ArrowDown':
+      if (arrows === 'ctrl' || arrows === 'plain') act(() => control.volumeBy(e.code === 'ArrowUp' ? 0.05 : -0.05))
+      break
+  }
 }
 
 onMounted(() => {
@@ -633,6 +661,7 @@ if (offline) {
 onBeforeUnmount(() => {
   stopConnect()
   stopHandoff()
+  stopPrefs()
   clearInterval(keepTimer)
   clearTimeout(poll)
   window.removeEventListener('keydown', onKey)

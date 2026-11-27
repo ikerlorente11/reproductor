@@ -11,7 +11,7 @@
           <span class="rp-muted rp-small">{{ artist.albums.length }} {{ artist.albums.length === 1 ? 'disco' : 'discos' }} · {{ artist.tracks.length }} {{ artist.tracks.length === 1 ? 'canción' : 'canciones' }}</span>
           <div class="rp-hero-actions">
             <button class="rp-btn rp-primary rp-round-btn" title="Reproducir todo" @click="play(all, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-            <button class="rp-btn" @click="play(all, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
+            <button class="rp-act" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(all, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
             <AddToDeviceList :songs="all" />
           </div>
         </div>

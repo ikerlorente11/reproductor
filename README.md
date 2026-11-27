@@ -9,7 +9,7 @@ de El Reproductor («Servidor propio») ve toda tu música de la nube, y conecta
     - la autorización de la API: `Api.bearer` para la sesión web y `Api.basic` con una contraseña de aplicación para las apps;
     - cómo llegar a los archivos de la música (`Files`: listar, borrar, URL para reproducir);
     - dónde está la app (`view` + `navigate`).
-  - Pruebas: `cd player && node --experimental-strip-types test/library.test.ts`; tipos: `npx vue-tsc --noEmit -p .`.
+  - Pruebas: `cd player && for t in test/*.test.ts; do node --experimental-strip-types $t; done`; tipos: `npx vue-tsc --noEmit -p .`.
 - Escritorio (Tauri): en `pc-toolkit/tools/reproductor/app`, publicado con la etiqueta `reproductor-v*`.
 
 Quien consume el paquete lo fija a un commit:

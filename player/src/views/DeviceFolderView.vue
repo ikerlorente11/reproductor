@@ -10,7 +10,7 @@
       </nav>
       <span class="rp-grow"></span>
       <button class="rp-btn rp-primary rp-round-btn" :disabled="!all.length" title="Reproducir la carpeta (con sus subcarpetas)" @click="play(all, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-      <button class="rp-btn" :disabled="!all.length" @click="play(all, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
+      <button class="rp-act" :disabled="!all.length" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(all, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
     </header>
     <ul v-if="found.folders.length" class="rp-folder-grid">
       <li v-for="f in found.folders" :key="f.path">

@@ -65,6 +65,7 @@
       <div class="rp-full-foot">
         <DevicePicker v-if="connect.on" />
         <span class="rp-grow"></span>
+        <PlaybackMenu v-if="!far" button-class="rp-pbtn" />
         <button v-if="!far" :class="['rp-fbtn', { on: panel === 'info' }]" aria-label="Información de la canción" @click="togglePanel('info')"><i class="rp-i rp-i-info" aria-hidden="true"></i></button>
         <button v-if="!far" :class="['rp-fbtn', { on: showLyrics }]" aria-label="Letra" @click="togglePanel('lyrics')"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
       </div>
@@ -123,6 +124,7 @@
       <button v-if="!far" :class="['rp-pbtn', { on: panel === 'info' }]" title="Información de la canción" :aria-pressed="panel === 'info'" @click="togglePanel('info')"><i class="rp-i rp-i-info" aria-hidden="true"></i></button>
       <button v-if="!far" :class="['rp-pbtn', { on: showLyrics }]" title="Letra" :aria-pressed="showLyrics" @click="togglePanel('lyrics')"><i class="rp-i rp-i-lyrics" aria-hidden="true"></i></button>
       <button v-if="!far" :class="['rp-pbtn', { on: showQueue }]" title="Cola" @click="togglePanel('queue')"><i class="rp-i rp-i-queue" aria-hidden="true"></i></button>
+      <PlaybackMenu v-if="!far" />
       <button v-if="mini" class="rp-pbtn" title="Mini reproductor: una tarjeta pequeña, siempre encima, donde quieras" @click="mini.enter()"><i class="rp-i rp-i-mini" aria-hidden="true"></i></button>
       <span class="rp-muted"><i class="rp-i rp-i-volume" aria-hidden="true"></i></span>
       <input class="rp-vol" type="range" min="0" max="1" step="0.02" :value="view.volume" aria-label="Volumen"
@@ -145,6 +147,7 @@ import DevicePicker from './DevicePicker.vue'
 import LyricsPanel from './LyricsPanel.vue'
 import QueuePanel from './QueuePanel.vue'
 import DevicesPanel from './DevicesPanel.vue'
+import PlaybackMenu from './PlaybackMenu.vue'
 import SongInfoPanel from './SongInfoPanel.vue'
 
 defineOptions({ inheritAttrs: false })

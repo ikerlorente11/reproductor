@@ -8,48 +8,68 @@ En orden: cada bloque se apoya en los anteriores; dentro de cada uno, de lo más
 
 ## 1. Lo rápido y lo que no depende de nada
 
-- [ ] **Precargar la siguiente canción.** Android ya lo hace (ExoPlayer). En escritorio/web, un segundo `<audio>` que
-  cargue la siguiente unos segundos antes de que acabe la actual. Es la base de quitar los silencios y de pasar de una
-  canción a otra sin hueco.
-- [ ] **Cerrar y minimizar desde el mini reproductor**, en la tarjeta y en la barra. Ahora hay que volver a la ventana
-  completa para cerrar la app.
-- [ ] **Seguir sonando en segundo plano al cerrar** (opcional, en Ajustes): al cerrar la ventana, la app se queda en
-  la bandeja del sistema y la música sigue; desde su icono se vuelve a abrir, se pausa o se sale del todo. Ahora no hay
-  bandeja ni se intercepta el cierre.
-- [ ] **Botones en la vista previa de la barra de tareas** (anterior, reproducir/pausar, siguiente), como Spotify:
-  `ITaskbarList3::ThumbBarAddButtons` desde Rust, con la ventana subclasificada para recibir los clics. El botón
-  central cambia entre ▶ y ⏸ según suene; se vuelven a poner si el Explorador se reinicia (`TaskbarButtonCreated`).
-  Iconos `.ico` blancos sacados de los de la app. Quizá un cuarto botón de «Me gusta».
-- [ ] **Atajos de teclado en el mini reproductor**: espacio para pausar, flechas para el volumen y la posición.
-- [ ] **Temporizador para dormir**: parar en X minutos o al acabar la canción, con un fundido al final.
-- [ ] **Velocidad de reproducción** y **recordar la posición** en canciones largas (sesiones, audiolibros, podcasts):
-  al volver, sigue donde se dejó.
+- [x] **Precargar la siguiente canción.** Android ya lo hace (ExoPlayer). En escritorio/web, un segundo `<audio>` que
+  carga la siguiente 30 s antes de que acabe la actual (`preload` en `htmlOutput`); al llegar, se intercambian. Es la
+  base de quitar los silencios y de pasar de una canción a otra sin hueco.
+- [x] **Cerrar y minimizar desde el mini reproductor**, en la tarjeta y en la barra (`minimize`/`close` de
+  `MiniWindow`).
+- [x] **Seguir sonando en segundo plano al cerrar** (Ajustes › Ventana, apagado por defecto): la ventana se esconde en
+  la bandeja del sistema y la música sigue; su icono la abre, y su menú pausa, pasa de canción o sale del todo
+  (`window.rs` de la app de escritorio).
+- [x] **Botones en la vista previa de la barra de tareas** (anterior, reproducir/pausar, siguiente), como Spotify:
+  `ITaskbarList3::ThumbBarAddButtons` desde Rust, con la ventana subclasificada para recibir los clics; se vuelven a
+  poner con `TaskbarButtonCreated`. Los iconos se dibujan en Rust al tamaño de la pantalla. Pendiente: «Me gusta».
+- [x] **Atajos de teclado**: espacio; Ctrl+←/→ canción, Ctrl+↑/↓ volumen, Mayús+←/→ 5 s; en el mini, las flechas
+  solas (posición y volumen).
+- [x] **Temporizador para dormir**: en X minutos o al acabar la canción, con un fundido de 10 s. En Android lo hace
+  ExoPlayer (la página se duerme con la pantalla apagada).
+- [x] **Velocidad de reproducción** y **recordar la posición** en canciones de 20 min o más (sesiones, audiolibros,
+  podcasts): al volver, sigue donde se dejó.
 
 ## 2. El análisis de cada canción
 
-- [ ] **Circuito de audio de escritorio/web** (Web Audio): normalizar → ecualizar → subir → limitar, montado una vez.
-  Lo primero, comprobar que las URLs de cada fuente (equipo, nube, Navidrome, Jellyfin) tienen CORS: sin él, Web Audio
-  las deja en silencio, y eso cambiaría el plan de todo el sonido.
-- [ ] **Normalizador de volumen** y **quitar los silencios del principio y del final**, juntos. Los dos activados por
-  defecto y se quitan en Ajustes. Comparten lo más costoso: analizar cada canción una vez y guardarlo (la sonoridad, en
-  LUFS / ReplayGain, y dónde empieza y acaba el sonido); la nube, en el servidor; el equipo, en la app la primera vez
-  que suena; si el archivo trae etiquetas ReplayGain, esas.
-  - Los silencios no se quitan entre dos canciones seguidas del mismo disco en orden (discos que encadenan canciones).
-  - Android: un procesador de audio de ExoPlayer para el volumen; para los silencios no vale su `skipSilence`, que
-    quita también los de en medio: recortar solo los bordes.
+- [x] **Circuito de audio de escritorio/web** (Web Audio, en `htmlOutput`): cada `<audio>` → su ganancia → limitador.
+  El ecualizador irá entre medias. CORS comprobado: `media://` del escritorio (equipo y nube) manda `*`; la web del
+  drive usa URLs firmadas de su mismo origen; Navidrome manda `*` (también en la petición previa con `Range`). Jellyfin,
+  sin servidor con que probar: una fuente que no deje pasa a sonar por un tercer `<audio>` fuera del circuito.
+- [x] **Normalizador de volumen** (a −14 LUFS, de −15 a +6 dB) y **quitar los silencios del principio y del final**
+  (Ajustes › Sonido, los dos activados). La página mide cada canción la primera vez (`analysis.ts`: BS.1770 a 16 kHz y
+  bordes a −50 dBFS) y lo guarda en IndexedDB; mide la actual al empezar y la siguiente mientras tanto.
+  - Los silencios no se quitan entre dos canciones seguidas del mismo disco sin aleatorio.
+  - Android: ExoPlayer baja con el volumen y sube con `LoudnessEnhancer` sobre su sesión de audio; salta los bordes
+    al pasar de canción (no `skipSilence`, que quita también los de en medio).
+  - Pendiente, como mejora: medir en el servidor (la nube) o en Rust (el equipo), y leer las etiquetas ReplayGain.
 
 ## 3. Ecualizador y salidas (sobre el circuito del bloque 2)
 
-- [ ] **Ecualizador** de 10 bandas con preajustes y uno propio. Escritorio/web: filtros de Web Audio. Android:
-  `Equalizer` sobre la sesión de audio de ExoPlayer.
-- [ ] **Subir el volumen por encima del máximo**, con limitador para que no distorsione. Escritorio/web:
-  `DynamicsCompressor`. Android: `LoudnessEnhancer`.
-- [ ] **Elegir la salida de audio** en escritorio (altavoces, cascos, HDMI…) sin tocar Windows (`setSinkId`).
-- [ ] **Ecualizador por salida**: un ajuste para cada salida, que cambia solo al cambiar de salida.
+- [x] **Ecualizador** de 10 bandas (`eq.ts`) con 11 preajustes y uno propio (Ajustes › Ecualizador). Escritorio/web:
+  filtros de Web Audio entre la ganancia de cada canción y el limitador. Android: el `Equalizer` del sistema sobre la
+  sesión de ExoPlayer; cada una de sus bandas (suelen ser 5) toma lo que dicen las 10 a su frecuencia.
+- [x] **Volumen extra** (0 a +12 dB, Ajustes › Sonido). Escritorio/web: una ganancia antes del limitador. Android:
+  `LoudnessEnhancer`, junto con lo que sube cada canción.
+- [x] **Elegir la salida de audio** (Ajustes › Sonido) con `setSinkId`. El sistema solo nombra sus salidas a una página
+  con permiso de micrófono: el escritorio se lo da a su página (`on_permission_request`, solo el micrófono), que lo pide
+  y lo suelta al momento; la web lo pide con «Ver mis salidas».
+- [x] **Ecualizador por salida**: un ajuste para cada salida. Escritorio/web: cada dispositivo elegido. Android:
+  altavoz, auriculares con cable o cada aparato Bluetooth (`AudioDeviceCallback`), que cambia solo.
+- [x] **Ajustes en apartados** (`SettingsMenu`): en el móvil, una lista y cada apartado en su página; en pantalla
+  ancha, la lista a la izquierda. El apartado va en la ruta (`#v=settings&s=eq`).
 
 ## 4. Lo independiente, cuando apetezca
 
-- [ ] **Radio al acabar la cola** (opcional, en Ajustes): seguir con canciones parecidas (del mismo artista y de los
-  relacionados de Deezer) en vez de quedarse en silencio.
-- [ ] **Selector de calidad** de la nube y de lo guardado sin conexión (original, alta, normal, baja; quizá otra con
-  datos móviles). Mirar antes si el servidor transcodifica; Navidrome con `maxBitRate`, Jellyfin ya pide formato.
+- [x] **Radio al acabar la cola** (Ajustes › Reproducción, apagada por defecto; `radio.ts`): cuando quedan dos
+  canciones, añade 25 que tienes: de los últimos artistas, de los que Deezer relaciona con ellos (escritorio y Android,
+  que pueden preguntarle; la web no), y si son pocas, lo que más escuchas y otros artistas de la biblioteca. Nada de lo
+  escuchado hace poco ni de lo que ya está en la cola.
+- [x] **Selector de calidad** (Ajustes › Reproducción; en el móvil, otra con datos móviles; `quality.ts`). Solo
+  recodifican Navidrome/Subsonic (`maxBitRate`) y Jellyfin (`MaxStreamingBitrate`). La nube (WebDAV) y lo guardado sin
+  conexión van siempre en original: el servidor de El Archivador no recodifica.
+  - Pendiente, si hace falta: que el servidor recodifique la nube (o la sirva a través de Navidrome, que tiene los
+    mismos archivos) para escucharla con datos móviles en calidad baja.
+
+## Hecho además
+
+- [x] **Ajustes compartidos entre dispositivos** (con servidor conectado; `prefs.ts`, y `GET`/`PUT /api/prefs` en El
+  Archivador): igualar el volumen, quitar los silencios, el ecualizador general, la radio, la calidad con wifi y la
+  velocidad son los mismos en la web, el escritorio y el móvil; gana el último cambio. Son de cada dispositivo: la
+  salida y el ecualizador de cada salida, el volumen extra, la calidad con datos móviles, la ventana y el tema.

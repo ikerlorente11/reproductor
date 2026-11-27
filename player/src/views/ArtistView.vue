@@ -25,18 +25,18 @@
           <span class="rp-muted rp-small">{{ [fmtFans(page.fans), page.follow ? rulesSummary(page.follow) : ''].filter(Boolean).join(' · ') }}</span>
           <div class="rp-hero-actions">
             <button v-if="songs.length" class="rp-btn rp-primary rp-round-btn" title="Reproducir todo" @click="play(shownSongs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-            <button v-if="songs.length" class="rp-btn" title="Todo en orden aleatorio" @click="play(shownSongs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
-            <template v-if="page.follow">
-              <span class="rp-badge rp-badge-done rp-badge-big">Siguiendo</span>
-              <button class="rp-btn" @click="editing = !editing">Qué se baja…</button>
-              <button class="rp-btn rp-danger" @click="askUnfollow = true">Dejar de seguir</button>
-            </template>
-            <button v-else class="rp-btn rp-primary" @click="editing = !editing">Seguir</button>
+            <button v-if="songs.length" class="rp-act" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(shownSongs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
+            <button :class="['rp-btn', 'rp-state', { on: page.follow }]" :aria-expanded="editing"
+                    :title="page.follow ? 'Lo sigues: se baja solo lo que saque. Pulsa para cambiar qué se baja' : 'Seguir: bajar lo que saque, con las reglas que elijas'"
+                    @click="editing = !editing">{{ page.follow ? 'Siguiendo' : 'Seguir' }}</button>
             <AddToPlaylist kind="artist" :id="page.id" :followed="!!page.follow" />
-            <button v-if="songs.length" class="rp-btn rp-danger" :title="`Borrar de ${where} todo lo suyo`" @click="removeAll">
-              <i class="rp-i rp-i-delete" aria-hidden="true"></i> Borrar
-            </button>
-            <button v-if="deletable.length > 1 && !selecting" class="rp-btn" title="Elegir varios discos para borrarlos a la vez" @click="selecting = true">Seleccionar</button>
+            <ActionMenu :items="[
+              { label: 'Qué se baja…', icon: 'rp-i-settings', if: !!page.follow, run: () => { editing = true } },
+              { label: 'Seleccionar discos', note: 'Para borrar varios a la vez', icon: 'rp-i-select', if: deletable.length > 1 && !selecting, run: () => { selecting = true } },
+              'sep',
+              { label: 'Borrar todo lo suyo', note: `De ${where}`, icon: 'rp-i-delete', danger: true, if: songs.length > 0, run: removeAll },
+              { label: 'Dejar de seguir', icon: 'rp-i-unfollow', danger: true, if: !!page.follow, run: () => { askUnfollow = true } }
+            ]" />
           </div>
         </div>
       </header>
@@ -85,9 +85,9 @@
           <ReleaseCard v-for="r in g.releases" :key="r.release_id" :release="r" :selecting="selecting" :selectable="selecting && isDeletable(r)"
                        :selected="picked.has(r.release_id)" @open="go({ v: 'release', id: albumOf(r) })" @play="playRelease(r)" @select="pick(r)">
             <button v-if="!page.follow && r.status.startsWith('preview')" class="rp-btn rp-small" :disabled="busy === r.release_id"
-                    title="Bajar solo este disco, sin seguir al artista" @click="choose(r, 'download')"><i class="rp-i rp-i-download" aria-hidden="true"></i> Bajar</button>
+                    title="Bajar solo este disco, sin seguir al artista" @click="choose(r, 'download')"><i class="rp-i rp-i-cloud-down" aria-hidden="true"></i> Bajar</button>
             <template v-if="page.follow || !r.status.startsWith('preview')">
-              <button v-if="['skipped', 'failed'].includes(r.status)" class="rp-btn rp-small" :disabled="busy === r.release_id" @click="choose(r, 'download')"><i class="rp-i rp-i-download" aria-hidden="true"></i> Bajar</button>
+              <button v-if="['skipped', 'failed'].includes(r.status)" class="rp-btn rp-small" :disabled="busy === r.release_id" @click="choose(r, 'download')"><i class="rp-i rp-i-cloud-down" aria-hidden="true"></i> Bajar</button>
               <button v-if="r.status === 'wanted'" class="rp-btn rp-small" :disabled="busy === r.release_id" @click="choose(r, 'skip')">No bajar</button>
               <button v-if="r.manual && page.follow" class="rp-btn rp-small" title="Que decidan las reglas" :disabled="busy === r.release_id" @click="choose(r, 'auto')">Automático</button>
               <AddToPlaylist kind="release" :id="r.release_id" small />
@@ -123,6 +123,7 @@ import TrackList from './TrackList.vue'
 import { useStore } from '../lib/store'
 import ReleaseCard from './ReleaseCard.vue'
 import RulesEditor from './RulesEditor.vue'
+import ActionMenu from './ActionMenu.vue'
 import AddToPlaylist from './AddToPlaylist.vue'
 import SelectionBar from './SelectionBar.vue'
 

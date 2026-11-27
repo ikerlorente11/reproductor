@@ -15,18 +15,21 @@
           </span>
           <div class="rp-hero-actions">
             <button v-if="songs.length" class="rp-btn rp-primary rp-round-btn" title="Reproducir" @click="play(songs, null, false)"><i class="rp-i rp-i-play" aria-hidden="true"></i></button>
-            <button v-if="songs.length" class="rp-btn" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i> Aleatorio</button>
-            <button v-if="songs.length" class="rp-btn" title="Que suene después de la canción actual" @click="playNext(songs); notify('Sonará a continuación.')">Siguiente en la cola</button>
+            <button v-if="songs.length" class="rp-act" title="Aleatorio" aria-label="Reproducir en orden aleatorio" @click="play(songs, null, true)"><i class="rp-i rp-i-shuffle" aria-hidden="true"></i></button>
+            <!-- to the cloud (a cloud on it), not the copy on this device (OfflineButton's round arrow) -->
+            <button v-if="canDownload" class="rp-btn rp-primary" :disabled="busy" :title="`Bajar a ${where}`" @click="download">
+              <span v-if="busy" class="rp-spin"></span><i v-else class="rp-i rp-i-cloud-down" aria-hidden="true"></i> Bajar {{ missing === album.songs.length ? 'el disco' : `lo que falta (${missing})` }}
+            </button>
             <OfflineButton :paths="songs.map((s) => s.path)" />
-            <button v-if="canDownload" class="rp-btn rp-primary" :disabled="busy" @click="download">
-              <span v-if="busy" class="rp-spin"></span> <i class="rp-i rp-i-download" aria-hidden="true"></i> Bajar {{ missing === album.songs.length ? 'el disco' : `lo que falta (${missing})` }}
-            </button>
             <span v-if="badge" :class="['rp-badge', 'rp-badge-big', `rp-badge-${album.mine!.status}`]" :title="label.hint">{{ label.text }}</span>
-            <button v-if="album.mine?.status === 'wanted' && album.followed" class="rp-btn" @click="skip">No bajar</button>
             <AddToPlaylist kind="release" :id="album.id" :followed="album.followed" />
-            <button v-if="songs.length" class="rp-btn rp-danger" :title="`Borrar de ${where} las canciones que tienes de este disco`" @click="removeAlbum">
-              <i class="rp-i rp-i-delete" aria-hidden="true"></i> Borrar
-            </button>
+            <ActionMenu :items="[
+              { label: 'Siguiente en la cola', note: 'Que suene después de la canción actual', icon: 'rp-i-queue', if: songs.length > 0,
+                run: () => { playNext(songs); notify('Sonará a continuación.') } },
+              { label: 'No bajar', note: 'Aunque sigas al artista', icon: 'rp-i-close', if: album.mine?.status === 'wanted' && album.followed, run: skip },
+              'sep',
+              { label: 'Borrar', note: `Lo que tienes de este disco, de ${where}`, icon: 'rp-i-delete', danger: true, if: songs.length > 0, run: removeAlbum }
+            ]" />
           </div>
           <span v-if="label.hint && badge" class="rp-muted rp-small">{{ label.hint }}</span>
           <span v-if="album.mine?.result?.failed" class="rp-muted rp-small">{{ album.mine.result.failed }} {{ album.mine.result.failed === 1 ? 'canción no se pudo bajar' : 'canciones no se pudieron bajar' }}.</span>
@@ -44,6 +47,7 @@ import type { AlbumPage } from '../lib/api'
 import { heldSongs, kindLabel, statusLabel, fmtDate } from '../lib/library'
 import { play, playNext } from '../lib/player'
 import { useStore } from '../lib/store'
+import ActionMenu from './ActionMenu.vue'
 import AddToPlaylist from './AddToPlaylist.vue'
 import OfflineButton from './OfflineButton.vue'
 import TrackList from './TrackList.vue'
